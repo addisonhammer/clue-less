@@ -1,0 +1,4 @@
+# Developers
+*.code-workspace
+.vscode
+.venv/
