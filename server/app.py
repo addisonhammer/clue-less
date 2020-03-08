@@ -24,10 +24,12 @@ def index():
 @APP.route('/clue_server')
 def clue_server():
     address = ''
+    logging.info('Waiting for an accusation from the client...')
     while not address: 
         c, address = s.accept()
-        time.sleep(0.1)
+        time.sleep(0.5)
     accusation = json.loads(c.recv(1024).decode('utf-8'))
+    logging.info('Received an accusation from the client @ %s:\n%s', address[0], accusation)
     accusation['username'] = accusation['username'] + f'@{address[0]}' 
     c.close()
     return flask.render_template('clue.html.jinja', whodoneit=True, **accusation)
