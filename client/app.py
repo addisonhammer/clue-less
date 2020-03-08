@@ -1,8 +1,16 @@
+"""Example Client that generates a random accusation and sends it to the server."""
+import json
 import logging
+import os
 import random
+import socket
+import time
 
 import flask
-app = flask.Flask(__name__)
+APP = flask.Flask(__name__)
+
+SERVER_IP = os.environ.get('SERVER_IP')
+SERVER_PORT = int(os.environ.get('SERVER_PORT'))
 
 NAMES = (
     'Prof. Plum',
@@ -34,27 +42,37 @@ ROOMS = (
     'Conservatory',
 )
 
-@app.route('/')
+@APP.route('/')
 def index():
     clue_url = flask.url_for('clue')
     return f'This is the index, try <a href="{clue_url}">Clue</a> instead'
 
-@app.route('/clue', methods=['POST', 'GET'])
+# This one handles HTTP POST and GET methods, so we can capture the form submit
+@APP.route('/clue', methods=['POST', 'GET'])
 def clue():
     if flask.request.method == 'POST':
-        logging.info('POST call, serving ACCUSE template')
+        logging.info('POST call, sending random accusation to server...')
+        accusation = {
+            'username': flask.request.form['username'],
+            'name': random.choice(NAMES),
+            'room': random.choice(ROOMS),
+            'weapon': random.choice(WEAPONS),
+        }
+        logging.info('Sending accusation to %s:%s...\n%s', SERVER_IP, SERVER_PORT, accusation)
+        s = socket.socket()
+        s.connect((SERVER_IP, SERVER_PORT))
+        s.send(json.dumps(accusation).encode('utf-8')) 
+        s.close()       
         return flask.render_template(
             'clue.html.jinja',
             whodoneit=True,
-            username=flask.request.form['username'],
-            name=random.choice(NAMES),
-            room=random.choice(ROOMS),
-            weapon=random.choice(WEAPONS),
+            **accusation,
         )
     else:
         logging.info('GET call, serving GUESS template')
         return flask.render_template('clue.html.jinja', whodoneit=False)
 
 if __name__ == '__main__':
-    app.run()
-    app.secret_key == u'yolo'
+    logging.basicConfig(level=logging.INFO)
+    APP.run(host='0.0.0.0')
+    APP.secret_key == u'yolo'

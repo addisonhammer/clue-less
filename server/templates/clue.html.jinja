@@ -1,0 +1,13 @@
+<!doctype html>
+<title>Clue-Less</title>
+{% if whodoneit %}
+<h1>It was {{ name }} in the {{ room }} with the {{ weapon }}!</h1>
+(sent by: {{username}})
+{% else %}
+<h1>Who done it?</h1>
+  <form method="post">
+    <label for="username">Your Name</label>
+    <input name="username" id="username" required>
+    <input type="submit" value="Guess">
+  </form>
+{% endif %}
