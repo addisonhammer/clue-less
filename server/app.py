@@ -6,33 +6,27 @@ import socket
 import time
 
 import flask
+from flask import jsonify
+from flask import request
 
 APP = flask.Flask(__name__)
 
-SERVER_PORT = int(os.environ.get('SERVER_PORT'))
-
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('', SERVER_PORT))
-s.listen(5)
+VALID = (
+    'FALSE',
+    'TRUE'
+)
 
 @APP.route('/')
 def index():
-    clue_url = flask.url_for('clue_server')
-    return f'This is the index, try <a href="{clue_url}">Clue</a> instead'
+    return f'This is the index'
 
-# This page loads indefinitely until a message is received from a client with an accusation
-@APP.route('/clue_server')
-def clue_server():
-    address = ''
-    logging.info('Waiting for an accusation from the client...')
-    while not address: 
-        c, address = s.accept()
-        time.sleep(0.5)
-    accusation = json.loads(c.recv(1024).decode('utf-8'))
-    logging.info('Received an accusation from the client @ %s:\n%s', address[0], accusation)
-    accusation['username'] = accusation['username'] + f'@{address[0]}' 
-    c.close()
-    return flask.render_template('clue.html.jinja', whodoneit=True, **accusation)
+@APP.route('/api/test', methods=['GET'])
+def handleGet():
+    logging.info('GET call, Received: ' + str(flask.request.args))
+
+    response = {'correct': random.choice(VALID)}
+
+    return jsonify(response)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
