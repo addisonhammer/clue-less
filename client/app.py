@@ -5,12 +5,14 @@ import os
 import random
 import socket
 import time
-
 import flask
+
+import requests
+
 APP = flask.Flask(__name__)
 
 SERVER_IP = os.environ.get('SERVER_IP')
-SERVER_PORT = int(os.environ.get('SERVER_PORT'))
+SERVER_PORT = os.environ.get('SERVER_PORT')
 
 NAMES = (
     'Prof. Plum',
@@ -42,35 +44,32 @@ ROOMS = (
     'Conservatory',
 )
 
-@APP.route('/')
-def index():
-    clue_url = flask.url_for('clue')
-    return f'This is the index, try <a href="{clue_url}">Clue</a> instead'
+@APP.route('/', methods=['GET'])
+def handleGet():
+    logging.info('GET call, serving GUESS template')
+    return flask.render_template('clue.html.jinja')
 
-# This one handles HTTP POST and GET methods, so we can capture the form submit
-@APP.route('/clue', methods=['POST', 'GET'])
-def clue():
-    if flask.request.method == 'POST':
-        logging.info('POST call, sending random accusation to server...')
-        accusation = {
-            'username': flask.request.form['username'],
-            'name': random.choice(NAMES),
-            'room': random.choice(ROOMS),
-            'weapon': random.choice(WEAPONS),
-        }
-        logging.info('Sending accusation to %s:%s...\n%s', SERVER_IP, SERVER_PORT, accusation)
-        s = socket.socket()
-        s.connect((SERVER_IP, SERVER_PORT))
-        s.send(json.dumps(accusation).encode('utf-8')) 
-        s.close()       
-        return flask.render_template(
-            'clue.html.jinja',
-            whodoneit=True,
-            **accusation,
-        )
-    else:
-        logging.info('GET call, serving GUESS template')
-        return flask.render_template('clue.html.jinja', whodoneit=False)
+
+@APP.route('/', methods=['POST'])
+def handlePost():
+    url = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/api/test'
+    logging.info(url)
+
+    accusation = {
+        'username': flask.request.form['username'],
+        'name': random.choice(NAMES),
+        'room': random.choice(ROOMS),
+        'weapon': random.choice(WEAPONS),
+    }
+
+    response = requests.get(url, params=accusation).json()
+
+    return flask.render_template(
+        'result.html.jinja',
+        **accusation,
+        valid=response['correct'],
+    )
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
