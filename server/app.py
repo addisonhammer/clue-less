@@ -9,6 +9,8 @@ import flask
 from flask import jsonify
 from flask import request
 
+from core import messages
+
 from clueless_db import Clueless_Database
 
 DB_NAME = os.environ.get('DB_NAME')
@@ -47,7 +49,9 @@ def index():
 
 @APP.route('/api/test', methods=['GET'])
 def handleGet():
-    logging.info('GET call, Received: ' + str(flask.request.args))
+    raw_data = dict(flask.request.args)
+    accusation = messages.PlayerAccusation(**raw_data)
+    logging.info('GET call, Received: %s', accusation)
 
     response = {'correct': random.choice(VALID)}
 

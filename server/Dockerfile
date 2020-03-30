@@ -1,12 +1,16 @@
 FROM python:alpine
 
-WORKDIR /server
-ADD . /server
-
 EXPOSE 5000
+
+WORKDIR /
+ADD ./core /core
+ADD ./server /server
+
+ENV PYTHONPATH="$PYTHONPATH:/core"
 
 RUN pip install attrs
 RUN pip install flask
+RUN pip install networkx
 
 # Full install of PostgreSQL python module
 RUN apk update

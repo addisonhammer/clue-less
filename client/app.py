@@ -5,44 +5,18 @@ import os
 import random
 import socket
 import time
-import flask
+import uuid
 
+import flask
 import requests
+
+from core import game_rules
+from core import messages
 
 APP = flask.Flask(__name__)
 
 SERVER_IP = os.environ.get('SERVER_IP')
 SERVER_PORT = os.environ.get('SERVER_PORT')
-
-NAMES = (
-    'Prof. Plum',
-    'Mrs. White',
-    'Col. Mustard',
-    'Miss Scarlet',
-    'Mrs. Peacock',
-    'Mr. Green',
-)
-
-WEAPONS = (
-    'Revolver',
-    'Dagger',
-    'Lead Pipe',
-    'Rope',
-    'Candlestick',
-    'Wrench',
-)
-
-ROOMS = (
-    'Study',
-    'Hall',
-    'Lounge',
-    'Library',
-    'Billiard Room',
-    'Dining Room',
-    'Ballroom',
-    'Kitchen',
-    'Conservatory',
-)
 
 @APP.route('/', methods=['GET'])
 def handleGet():
@@ -55,18 +29,19 @@ def handlePost():
     url = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/api/test'
     logging.info(url)
 
-    accusation = {
-        'username': flask.request.form['username'],
-        'name': random.choice(NAMES),
-        'room': random.choice(ROOMS),
-        'weapon': random.choice(WEAPONS),
-    }
+    accusation = messages.PlayerAccusation(
+        message_id=uuid.uuid4().fields[0],
+        player=flask.request.form['player'],
+        accused=random.choice(game_rules.NAMES),
+        room=random.choice(game_rules.ROOMS),
+        weapon=random.choice(game_rules.WEAPONS),
+    )
 
-    response = requests.get(url, params=accusation).json()
+    response = requests.get(url, params=accusation.to_dict()).json()
 
     return flask.render_template(
         'result.html.jinja',
-        **accusation,
+        **accusation.to_dict(),
         valid=response['correct'],
     )
 

@@ -1,10 +1,10 @@
 <!doctype html>
 <title>Clue-Less</title>
 
-<h1>Your Guess was {{ name }} in the {{ room }} with the {{ weapon }}! - {{valid}}</h1>
-(sent by: {{username}})
+<h1>Your Guess was {{ accused }} in the {{ room }} with the {{ weapon }}! - {{valid}}</h1>
+(sent by: {{player}})
 
 <form method="post">
   <input type="submit" value="Guess Again">
-  <input type="hidden" id="username" name="username" value={{username}}>
+  <input type="hidden" id="player" name="player" value={{player}}>
 </form>
