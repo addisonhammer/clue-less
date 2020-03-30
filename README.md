@@ -22,13 +22,25 @@ Team Project for JHU Foundations of Software Engineering
     cd clue-less
     docker-compose build
     docker-compose up
-3) This should start two containers:
-   - clue-less_server (localhost:5000)
-   - clue-less_client (localhost:5001)
-4) Navigate to http://localhost:5000/clue-server to start the server waiting for connections
-5) Navigate to http://localhost:5001/clue to get the client form
+3) This should start four containers:
+   - clue-less_server  (localhost:5000)
+   - clue-less_client  (localhost:5001)
+   - clue-less_db      (not exposed)
+   - clue-less_adminer (localhost:8080) (see #8)
+
+4) If this is the first startup:
+   Navigate to http://localhost:5000/api/db/create_database
+   This will create the necessary database tables.
+
+5) Navigate to http://localhost:5001/ to get the client form
    - Enter your name and click 'Submit' to generate, send, and display a random 'accusation'
-6) The client will send the 'accusation' over a tcp socket (4242) on a virtual network connecting the containers
-7) The server will receive the 'accusation' and display it, along with the sender of the message
+
+6) The client will send the 'accusation' using a GET request via the docker network
+
+7) The server will receive the 'accusation' and respond with a randomly generated "Valid/Invalid".
+
+8) Naviate to http://localhost:8080/ to open the database admin website
+   username and password can be found in the docker-compose script.
+   Change System to PostgreSQL
 
 Clue-Less is currently still in the early prototype phase, so functionality is extremely limited and only coarsely represents our desired architecture.
