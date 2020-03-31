@@ -54,7 +54,7 @@ class Clueless_Database:
 
             try:
                 cursor = self.connection.cursor()
-                cursor.execute(open("database_setup.postgres","r").read())
+                cursor.execute(open("server/database_setup.postgres","r").read())
                 cursor.close()
                 self.connection.commit()
                 return str("Success")
