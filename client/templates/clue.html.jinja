@@ -4,8 +4,8 @@
 <form name=accuse-form id=accuse-form class="form-inline" method="POST" action="/">
     <label for="player">Your Name:</label>
     <input name="player" id="player" required><br><br>
-    <label for="accused">Choose who to Accuse:</label>
-    <select name="accused" id="accused" form_id=accuse-form>
+    <label for="suspect">Select the Suspect:</label>
+    <select name="suspect" id="suspect" form_id=accuse-form>
       {% for name in names %}
       <option value="{{ name }}">{{ name }}</option>
       {% endfor %}

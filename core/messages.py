@@ -21,7 +21,7 @@ class Message(object):
 @attr.s(auto_attribs=True, slots=True)
 class PlayerSuggestion(Message):
     """This is a benign suggestion made in a user's normal turn."""
-    accused: str
+    suspect: str
     weapon: str
     room: str
 
@@ -29,7 +29,7 @@ class PlayerSuggestion(Message):
 @attr.s(auto_attribs=True, slots=True)
 class PlayerAccusation(Message):
     """This is a game-ending accusation, identical to a suggestion."""
-    accused: str
+    suspect: str
     weapon: str
     room: str
 
@@ -46,7 +46,7 @@ class GameState(Message):
     cards: List[str]
     current_player: str
     suggester: str
-    suggestion_accused: str
+    suggestion_suspect: str
     suggestion_weapon: str
     suggestion_room: str
     suggestion_refuted_by: str

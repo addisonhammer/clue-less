@@ -41,10 +41,6 @@ for attempt in range(ATTEMPTS):
 
 APP = flask.Flask(__name__)
 
-VALID = (
-    'FALSE',
-    'TRUE'
-)
 
 @APP.route('/')
 def index():
@@ -58,7 +54,7 @@ def handleGet():
 
     result = database.validate_accusation(
         game_id=game_id,
-        suspect_card=accusation.accused,
+        suspect_card=accusation.suspect,
         weapon_card=accusation.weapon,
         room_card=accusation.room)
 

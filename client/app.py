@@ -36,7 +36,7 @@ def handlePost():
     accusation = messages.PlayerAccusation(
         message_id=messages.generate_message_id(),
         player=form_results.get('player'),
-        accused=form_results.get('accused'),
+        suspect=form_results.get('suspect'),
         weapon=form_results.get('weapon'),
         room=form_results.get('room'),
     )
