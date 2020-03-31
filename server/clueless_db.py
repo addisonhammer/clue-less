@@ -1,7 +1,10 @@
 import psycopg2 as database
 import traceback
 import socket
+import logging
+import uuid
 from socket import SHUT_RDWR
+
 
 class Clueless_Database:
 
@@ -65,12 +68,63 @@ class Clueless_Database:
 #   and close them when the result data is no longer necessary.
 # Only reuse cursors when doing a bunch of updates or inserts.
 
+    def generate_uuid(self) -> int:
+        return uuid.uuid4().fields[1]
+
     def get_users(self):
         if self.db_error():
             return "Database Error"
 
         cursor = self.connection.cursor()
-        cursor.execute("SELECT * FROM User")
+        cursor.execute('SELECT * FROM "User"')
         result = cursor.fetchall()
         cursor.close()
         return result
+
+    def start_game(self, game_id: int, user_id: int, user_name: str,
+                   country_code: int, status: str):
+        if self.db_error():
+            return 'Database Error'
+
+        cursor = self.connection.cursor()
+        insert_user = """INSERT INTO "User"("UserID", "Name", "CountryCode")
+                         VALUES (%s, %s, %s)"""
+        logging.info(insert_user, user_id, user_name, country_code)
+        cursor.execute(insert_user, (user_id, user_name, country_code))
+
+        insert_game = """INSERT INTO "Game"("GameID", "UserID", "Status")
+                         VALUES (%s, %s, %s)"""
+        logging.info(insert_game, game_id, user_id, status)
+        cursor.execute(insert_game, (game_id, user_id, status))
+        self.connection.commit()
+        cursor.close()
+        return 'Success'        
+
+    def set_murder_deck(self, game_id: int, suspect_card: str,
+                        weapon_card: str, room_card: str):
+        if self.db_error():
+            return 'Database Error'
+
+        cursor = self.connection.cursor()
+        insert_murder_deck = """INSERT INTO "MurderDeck"("GameID", "SuspectCard", "WeaponCard", "RoomCard")
+                                VALUES (%s, %s, %s, %s)"""
+        logging.info(insert_murder_deck, game_id, suspect_card, weapon_card, room_card)
+        cursor.execute(insert_murder_deck, (game_id, suspect_card, weapon_card, room_card))
+        self.connection.commit()
+        cursor.close()
+        return 'Success'
+
+    def validate_accusation(self, game_id: int, suspect_card: str,
+                            weapon_card: str, room_card: str):
+        if self.db_error():
+            return 'Database Error'
+
+        cursor = self.connection.cursor()
+        select_murder_deck = """SELECT "GameID", "SuspectCard", "WeaponCard", "RoomCard"
+                                FROM "MurderDeck" """
+        cursor.execute(select_murder_deck)
+        result = cursor.fetchone()
+        cursor.close()
+        accusation = (game_id, suspect_card, weapon_card, room_card)
+        logging.info('Comparing: %s==%s', result, accusation)
+        return result == accusation
