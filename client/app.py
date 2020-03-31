@@ -21,20 +21,25 @@ SERVER_PORT = os.environ.get('SERVER_PORT')
 @APP.route('/', methods=['GET'])
 def handleGet():
     logging.info('GET call, serving GUESS template')
-    return flask.render_template('clue.html.jinja')
+    return flask.render_template('clue.html.jinja',
+                                 names=game_rules.NAMES,
+                                 rooms=game_rules.ROOMS,
+                                 weapons=game_rules.WEAPONS)
 
 
 @APP.route('/', methods=['POST'])
 def handlePost():
     url = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/api/test'
     logging.info(url)
+    form_results = flask.request.form
+    logging.info('Form Results: %s', form_results)
 
     accusation = messages.PlayerAccusation(
         message_id=uuid.uuid4().fields[0],
-        player=flask.request.form['player'],
-        accused=random.choice(game_rules.NAMES),
-        room=random.choice(game_rules.ROOMS),
-        weapon=random.choice(game_rules.WEAPONS),
+        player=form_results.get('player'),
+        accused=form_results.get('accused'),
+        weapon=form_results.get('weapon'),
+        room=form_results.get('room'),
     )
 
     response = requests.get(url, params=accusation.to_dict()).json()
