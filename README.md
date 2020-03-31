@@ -26,20 +26,28 @@ Team Project for JHU Foundations of Software Engineering
    - clue-less_server  (localhost:5000)
    - clue-less_client  (localhost:5001)
    - clue-less_db      (not exposed)
-   - clue-less_adminer (localhost:8080) (see #8)
+   - clue-less_adminer (localhost:8080) (see #10)
 
 4) If this is the first startup:
    Navigate to http://localhost:5000/api/db/create_database
-   This will create the necessary database tables.
+   This will create the necessary database tables via server-side scripts.
 
-5) Navigate to http://localhost:5001/ to get the client form
-   - Enter your name and click 'Submit' to generate, send, and display a random 'accusation'
+5) Navigate to http://localhost:5000/api/setup_game
+   This will initialize the game on the server with a secret 'MurderDeck' in the database.
+   Any accusations made by clients will be compared against these randomly-selected values.
+   (The random values selected are currently printed in the logs for testing purposes.)
 
-6) The client will send the 'accusation' using a GET request via the docker network
+6) Navigate to http://localhost:5001/ to get the client form
+   - Enter your name, choose a Suspect, Weapon, and Room, and click 'Submit'.
 
-7) The server will receive the 'accusation' and respond with a randomly generated "Valid/Invalid".
+7) The client will send the Accusation using a GET request via the docker network
 
-8) Naviate to http://localhost:8080/ to open the database admin website
+8) The server will receive the Accusation, check it against the database table 'MurderDeck',
+   and return True if it matches.
+
+9) The client will then display the Accusation made, and the results from the server.
+
+10) Naviate to http://localhost:8080/ to open the database admin website
    username and password can be found in the docker-compose script.
    Change System to PostgreSQL
 

@@ -70,6 +70,10 @@ def handleGet():
 def setupDB():
     create_result = database.create_database()
     logging.info(create_result)
+    return 'Database Created!'
+
+@APP.route('/api/setup_game', methods=['GET'])
+def setupGame():
     user_id = database.generate_uuid()
     setup_result = database.start_game(game_id=game_id,
                                        user_id=user_id,
@@ -84,7 +88,7 @@ def setupDB():
         room_card=random.choice(game_rules.ROOMS)
     )
     logging.info(murder_deck_result)
-    return 'Setup Complete!'
+    return 'Game Setup Complete!'
 
 
 # Define all @APP.routes above this line.
