@@ -1,5 +1,7 @@
-import attr
+import uuid
 from typing import Dict, List
+
+import attr
 
 
 @attr.s(auto_attribs=True, slots=True)
@@ -25,10 +27,11 @@ class PlayerSuggestion(Message):
 
 
 @attr.s(auto_attribs=True, slots=True)
-class PlayerAccusation(PlayerSuggestion):
+class PlayerAccusation(Message):
     """This is a game-ending accusation, identical to a suggestion."""
-    pass
-
+    accused: str
+    weapon: str
+    room: str
 
 @attr.s(auto_attribs=True, slots=True)
 class PlayerMove(Message):
@@ -47,3 +50,6 @@ class GameState(Message):
     suggestion_weapon: str
     suggestion_room: str
     suggestion_refuted_by: str
+
+def generate_message_id() -> int:
+    return uuid.uuid4().fields[1]

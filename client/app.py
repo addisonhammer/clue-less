@@ -5,7 +5,6 @@ import os
 import random
 import socket
 import time
-import uuid
 
 import flask
 import requests
@@ -35,7 +34,7 @@ def handlePost():
     logging.info('Form Results: %s', form_results)
 
     accusation = messages.PlayerAccusation(
-        message_id=uuid.uuid4().fields[0],
+        message_id=messages.generate_message_id(),
         player=form_results.get('player'),
         accused=form_results.get('accused'),
         weapon=form_results.get('weapon'),
