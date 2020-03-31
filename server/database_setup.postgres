@@ -1,3 +1,12 @@
+DROP TABLE IF EXISTS "User" CASCADE;
+CREATE TABLE "public"."User" (
+    "UserID" integer NOT NULL,
+    "Name" text NOT NULL,
+    "CountryCode" integer NOT NULL,
+    CONSTRAINT "User_UserID" PRIMARY KEY ("UserID")
+);
+
+
 DROP TABLE IF EXISTS "Game" CASCADE;
 CREATE TABLE "public"."Game" (
     "GameID" integer NOT NULL,
@@ -19,6 +28,16 @@ CREATE TABLE "public"."MurderDeck" (
 );
 
 
+DROP TABLE IF EXISTS "Players" CASCADE;
+CREATE TABLE "public"."Players" (
+    "GameID" integer NOT NULL,
+    "PlayerID" integer NOT NULL,
+    CONSTRAINT "Players_GameID" PRIMARY KEY ("GameID"),
+    CONSTRAINT "Players_PlayerID" UNIQUE ("PlayerID"),
+    CONSTRAINT "Players_GameID_fkey" FOREIGN KEY ("GameID") REFERENCES "Game"("GameID")
+);
+
+
 DROP TABLE IF EXISTS "PlayerDeck" CASCADE;
 CREATE TABLE "public"."PlayerDeck" (
     "PlayerID" integer NOT NULL,
@@ -28,24 +47,4 @@ CREATE TABLE "public"."PlayerDeck" (
     "CardThree" text NOT NULL,
     CONSTRAINT "PlayerDeck_PlayerID" PRIMARY KEY ("PlayerID"),
     CONSTRAINT "PlayerDeck_PlayerID_fkey" FOREIGN KEY ("PlayerID") REFERENCES "Players"("PlayerID")
-);
-
-
-DROP TABLE IF EXISTS "Players" CASCADE;
-CREATE TABLE "public"."Players" (
-    "GameID" integer NOT NULL,
-    "PlayerID" integer NOT NULL,
-    CONSTRAINT "Players_GameID" PRIMARY KEY ("GameID"),
-    CONSTRAINT "Players_PlayerID" UNIQUE ("PlayerID"),
-    CONSTRAINT "Players_GameID_fkey" FOREIGN KEY ("GameID") REFERENCES "Game"("GameID"),
-    CONSTRAINT "Players_PlayerID_fkey" FOREIGN KEY ("PlayerID") REFERENCES "PlayerDeck"("PlayerID")
-);
-
-
-DROP TABLE IF EXISTS "User" CASCADE;
-CREATE TABLE "public"."User" (
-    "UserID" integer NOT NULL,
-    "Name" integer NOT NULL,
-    "CountryCode" integer NOT NULL,
-    CONSTRAINT "User_UserID" PRIMARY KEY ("UserID")
 );
