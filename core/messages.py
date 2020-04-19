@@ -17,39 +17,67 @@ class Message(object):
     def to_dict(self):
         return attr.asdict(self)
 
+@attr.s(auto_attribs=True, slots=True)
+class PlayerSuggestionRequest(Message):
+    """This is a Server request for a client to make a Suggestion"""
+    suspects: List[str]
+    weapons: List[str]
+    rooms: List[str]
 
 @attr.s(auto_attribs=True, slots=True)
-class PlayerSuggestion(Message):
-    """This is a benign suggestion made in a user's normal turn."""
-    suspect: str
-    weapon: str
-    room: str
-
+class PlayerSuggestionResponse(Message):
+    """This is a Client response containing the Suggestion."""
+    suspect: str = ''
+    weapon: str = ''
+    room: str = ''
 
 @attr.s(auto_attribs=True, slots=True)
-class PlayerAccusation(Message):
+class PlayerSuggestionResult(Message):
+    """Contains the results of the Suggestion, for the Client"""
+    disproved_by: str = ''
+    disproved_card: str = ''
+
+@attr.s(auto_attribs=True, slots=True)
+class PlayerAccusationRequest(Message):
     """This is a game-ending accusation, identical to a suggestion."""
+    suspects: List[str]
+    weapons: List[str]
+    rooms: List[str]
+
+class PlayerAccusationResponse(Message):
+    """This is a game-ending accusation, identical to a suggestion."""
+    suspect: str = ''
+    weapon: str = ''
+    room: str = ''
+
+@attr.s(auto_attribs=True, slots=True)
+class PlayerAccusationResult(Message):
+    """Contains the results of the Accusation, for the Client"""
+    correct: bool
     suspect: str
     weapon: str
     room: str
 
 @attr.s(auto_attribs=True, slots=True)
-class PlayerMove(Message):
-    """This is a player's request to move to a new location."""
-    new_location: str
-
+class PlayerMoveRequest(Message):
+    """This is a server's request to a client for a PlayerMove."""
+    move_options: List[str]
 
 @attr.s(auto_attribs=True, slots=True)
-class GameState(Message):
+class PlayerMoveResponse(Message):
+    """This is a client's response to a PlayerMoveRequest."""
+    move: str = ''
+
+@attr.s(auto_attribs=True, slots=True)
+class GameStateRequest(Message):
     """This is the servers broadcast of game state to all clients."""
-    player_locations: Dict[str, str]
-    cards: List[str]
-    current_player: str
-    suggester: str
-    suggestion_suspect: str
-    suggestion_weapon: str
-    suggestion_room: str
-    suggestion_refuted_by: str
+    whereabouts : Dict[str, str]  # The Room.name (location) of each Player.name
+    current_turn: str  # The Player.name of the current turn
+
+@attr.s(auto_attribs=True, slots=True)
+class GameStateResponse(Message):
+    """This is the client response indicating they are still connected."""
+    connected: bool
 
 def generate_message_id() -> int:
     return uuid.uuid4().fields[1]
