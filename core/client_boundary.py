@@ -39,8 +39,10 @@ def _set_up_debug():
     ACCUSATION_RESULT_ROUTE = DEBUG_ACK_ROUTE
 
 
-def _sort_cards(cards: List[Card]) -> Tuple[str, str, str]:
+def _sort_cards(cards: List[Card]) -> Tuple[List[str], List[str], List[str]]:
     # Sort the cards by type, so that we can abstract that for the client
+    if not cards:
+        return '', '', ''
     suspect_cards = [
         card.name for card in cards if card.type == CardType.CHARACTER]
     weapon_cards = [
@@ -92,11 +94,17 @@ class Client(object):
                             or card.name == player_suggestion.suspect]
         return suggestion_cards
 
-    def send_suggestion_result(self, disproved_by: Optional[Player],
+    def send_suggestion_result(self, suggestion: List[Card],
+                               disproved_by: Optional[Player],
                                disproved_card: Optional[Card]):
+        suspect_cards, weapon_cards, room_cards = _sort_cards(suggestion)
+        request = PlayerSuggestionResult(
+            player=self.player_name,
+            suspect=next(iter(suspect_cards), ''),
+            weapon=next(iter(weapon_cards), ''),
+            room=next(iter(room_cards), ''))
         # Suggestion was not disproved
         if not disproved_by or not disproved_card:
-            request = PlayerSuggestionResult(player=self.player_name)
             response = self._post_request(
                 route=SUGGESTION_RESULT_ROUTE, request=request)
             return response[ACK]
@@ -110,10 +118,11 @@ class Client(object):
 
     def send_accusation_request(self, cards: List[Card]) -> List[Card]:
         suspect_cards, weapon_cards, room_cards = _sort_cards(cards)
-        request = PlayerAccusationRequest(player=self.player_name,
-                                          suspects=suspect_cards,
-                                          weapons=weapon_cards,
-                                          rooms=room_cards)
+        request = PlayerAccusationRequest(
+            player=self.player_name,
+            suspects=next(iter(suspect_cards), ''),
+            weapons=next(iter(weapon_cards), ''),
+            rooms=next(iter(room_cards), ''))
         response = self._post_request(route=ACCUSATION_ROUTE, request=request)
         player_accusation = PlayerAccusationResponse.from_dict(response)
         if not player_accusation:

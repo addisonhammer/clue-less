@@ -36,6 +36,9 @@ class PlayerSuggestionResponse(Message):
 @attr.s(auto_attribs=True, slots=True)
 class PlayerSuggestionResult(Message):
     """Contains the results of the Suggestion, for the Client"""
+    suspect: str = ''
+    weapon: str = ''
+    room: str = ''
     disproved_by: str = ''
     disproved_card: str = ''
 

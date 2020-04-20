@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 from enum import Enum
 import random
 import logging
@@ -79,14 +79,18 @@ class Game(object):
                          client.player_name)
             client.send_game_state(self.players, self.active_player)
 
-    def _broadcast_suggestion_results(self, disproved_by: Player,
-                                      disproved_card: Card) -> None:
+    def _broadcast_suggestion_results(self, suggestion: List[Card] = [],
+                                      disproved_by: Optional[Player] = None,
+                                      disproved_card: Optional[Card] = None
+                                      ) -> None:
         for client in self.clients:
-            client.send_suggestion_result(disproved_by, disproved_card)
+            client.send_suggestion_result(suggestion,
+                                          disproved_by, disproved_card)
 
-    def _broadcast_accusation_results(self, correct, accusation) -> None:
+    def _broadcast_accusation_results(self, accusation: List[Card],
+                                      correct: bool, ) -> None:
         for client in self.clients:
-            client.send_accusation_result(correct, accusation)
+            client.send_accusation_result(accusation, correct)
 
     def _player_move(self) -> None:
         current_room = self.active_player.room
@@ -112,9 +116,19 @@ class Game(object):
     def _player_suggest(self) -> None:
         # You can only suggest based on the room you are in
         room_card = self.get_card(self.active_player.room.name)
-        valid_cards = [card for card in self.cards if card.type !=
-                       CardType.ROOM] + [room_card]
+        if not room_card:
+            self._broadcast_suggestion_results()
+            return
+
+        # Request a suggestion, given valid options
+        valid_cards = [card for card in self.cards
+                       if card.type != CardType.ROOM] + [room_card]
         suggestion = self.active_client.send_suggestion_request(valid_cards)
+
+        # If they didn't want to make a suggestion, exit
+        if not suggestion:
+            self._broadcast_suggestion_results()
+            return
 
         # Move the suspect (if they're playing) to the accuser's room
         suspect_card = next((card for card in suggestion
@@ -128,9 +142,12 @@ class Game(object):
             player_to_ask = self.players[turn % len(self.players)]
             for card in suggestion:
                 if card.name in player_to_ask.cards:
-                    self._broadcast_suggestion_results(player_to_ask, card)
+                    self._broadcast_suggestion_results(
+                        suggestion, player_to_ask, card)
                     return
-        self._broadcast_suggestion_results(None, None)
+
+        # If no one was able to disprove the suggestion, broadcast that
+        self._broadcast_suggestion_results(suggestion, None, None)
 
     def _player_accuse(self):
         # TODO(ahammer): Remove the player's hand from the list of cards to accuse with

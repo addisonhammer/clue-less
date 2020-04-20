@@ -15,6 +15,7 @@ def main():
     game.take_turn()
     game.take_turn()
     game.take_turn()
+    print('Done!')
 
 
 if __name__ == "__main__":
