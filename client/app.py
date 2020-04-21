@@ -9,22 +9,18 @@ import time
 import flask
 import requests
 
-from core import game_rules
-from core import messages
+# from core import game_rules
+# from core import messages
 
 APP = flask.Flask(__name__)
 
 SERVER_IP = os.environ.get('SERVER_IP')
 SERVER_PORT = os.environ.get('SERVER_PORT')
 
-@APP.route('/', methods=['GET'])
-def handleGet():
-    logging.info('GET call, serving GUESS template')
-    return flask.render_template('clue.html.jinja',
-                                 names=game_rules.NAMES,
-                                 rooms=game_rules.ROOMS,
-                                 weapons=game_rules.WEAPONS)
-
+@APP.route('/', methods=['GET', 'POST'])
+def join_game():
+    logging.info('GET call, serving HOME template')
+    return flask.render_template('home.html.jinja')
 
 # @APP.route('/', methods=['POST'])
 # def handlePost():
@@ -49,8 +45,7 @@ def handleGet():
 #         valid=response['correct'],
 #     )
 
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    APP.run(host='0.0.0.0')
+    APP.run(debug=True, host='0.0.0.0')
     APP.secret_key == u'yolo'

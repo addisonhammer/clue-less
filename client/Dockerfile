@@ -2,10 +2,6 @@ FROM python:alpine
 
 EXPOSE 5000
 
-WORKDIR /
-ADD ./core /core
-ADD ./client /client
-
 ENV PYTHONPATH="$PYTHONPATH:/core"
 
 RUN pip install flask
