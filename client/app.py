@@ -8,42 +8,33 @@ import time
 
 import flask
 import requests
-
-# from core import game_rules
-# from core import messages
+from flask import request, redirect, url_for
 
 APP = flask.Flask(__name__)
 
 SERVER_IP = os.environ.get('SERVER_IP')
 SERVER_PORT = os.environ.get('SERVER_PORT')
 
+@APP.route('/game/<int:game_id>/<int:client_id>', methods=['GET', 'POST'])
+def game(game_id, client_id):
+    """User is redirected to a game given a game_id and a client_id."""
+    return flask.render_template('success.html.jinja')
+
 @APP.route('/', methods=['GET', 'POST'])
 def join_game():
-    logging.info('GET call, serving HOME template')
+    """User joins a game."""
+
+    if request.method == 'POST':
+        url = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/api/join_game'
+        player_name = request.form.get('name')     
+        logging.info('Name: %s', player_name)
+
+        # response = requests.get(url, param=player_name)
+        # logging.info('URL Response: %s', response)
+        # get client_id and game_id from response
+        return redirect(url_for('game', game_id=1, client_id=3))
+
     return flask.render_template('home.html.jinja')
-
-# @APP.route('/', methods=['POST'])
-# def handlePost():
-#     url = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/api/test'
-#     logging.info(url)
-#     form_results = flask.request.form
-#     logging.info('Form Results: %s', form_results)
-
-#     accusation = messages.PlayerAccusation(
-#         message_id=messages.generate_message_id(),
-#         player=form_results.get('player'),
-#         suspect=form_results.get('suspect'),
-#         weapon=form_results.get('weapon'),
-#         room=form_results.get('room'),
-#     )
-
-#     response = requests.get(url, params=accusation.to_dict()).json()
-
-#     return flask.render_template(
-#         'result.html.jinja',
-#         **accusation.to_dict(),
-#         valid=response['correct'],
-#     )
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
