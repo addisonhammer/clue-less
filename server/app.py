@@ -15,10 +15,22 @@ from core import game_rules
 
 from clueless_db import Clueless_Database
 
+from core.client_boundary import Client
+
+from core.messages import JoinGameRequest, JoinGameResponse
+from core.messages import StartGameRequest, StartGameResponse
+from core.messages import PlayerCountRequest, PlayerCountResponse
+from core.game import Game
+
 DB_NAME = os.environ.get('DB_NAME')
 DB_USER = os.environ.get('DB_USER')
 DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_ADDRESS = os.environ.get('DB_ADDRESS')
+
+CLIENT_PORT = os.environ.get('CLIENT_PORT')
+
+MIN_PLAYERS = 3
+MAX_PLAYERS = 6
 
 database_settings = {
     'database': DB_NAME,
@@ -46,21 +58,21 @@ APP = flask.Flask(__name__)
 def index():
     return f'This is the Server'
 
-@APP.route('/api/test', methods=['GET'])
-def handleGet():
-    raw_data = dict(flask.request.args)
-    accusation = messages.PlayerAccusation(**raw_data)
-    logging.info('GET call, Received: %s', accusation)
+# @APP.route('/api/test', methods=['GET'])
+# def handleGet():
+#     raw_data = dict(flask.request.args)
+#     accusation = messages.PlayerAccusation(**raw_data)
+#     logging.info('GET call, Received: %s', accusation)
 
-    result = database.validate_accusation(
-        game_id=game_id,
-        suspect_card=accusation.suspect,
-        weapon_card=accusation.weapon,
-        room_card=accusation.room)
+#     result = database.validate_accusation(
+#         game_id=game_id,
+#         suspect_card=accusation.suspect,
+#         weapon_card=accusation.weapon,
+#         room_card=accusation.room)
 
-    response = {'correct': result}
+#     response = {'correct': result}
 
-    return jsonify(response)
+#     return jsonify(response)
 
 @APP.route('/api/db/create_database', methods=['GET'])
 def setupDB():
@@ -86,6 +98,57 @@ def setupGame():
     logging.info(murder_deck_result)
     return 'Game Setup Complete!'
 
+clients = {}
+hostID = None
+game = None
+
+@APP.route('/api/join_game', methods=['GET'])
+def join():
+    global hostID
+    global game
+    
+    join_request = JoinGameRequest.from_dict(request.args)
+
+    player_count = len(clients)
+    if player_count >= MAX_PLAYERS:
+        return JoinGameResponse(accepted = False, gameID = -1)
+
+    client_id = database.generate_uuid()
+
+    if len(clients) == 0:
+        hostID = client_id
+
+    newClient = Client(join_request.name, request.remote_addr, CLIENT_PORT)
+    clients[client_id] = newClient
+
+    return JoinGameResponse(client_id = client_id, accepted = True, gameID = 1)
+
+@APP.route('/api/start_game', methods=['GET'])
+def start_game():
+    global hostID
+    global game
+
+    start_request = StartGameRequest.from_dict(request.args)
+
+    player_count = len(clients)
+    if player_count < MIN_PLAYERS or player_count > MAX_PLAYERS:
+        return StartGameResponse(accepted = False)
+
+    if hostID == start_request.client_id:
+        game = Game(list(clients.values()))
+
+    return StartGameResponse(accepted = True)
+
+@APP.route('/api/number_of_players', methods=['GET'])
+def player_count():
+    start_request = PlayerCountRequest.from_dict(request.args)
+    return PlayerCountResponse(count = len(clients))
+
+@APP.route('/api/step_game', methods=['GET'])
+def step_game():
+    global game
+    step_request = PlayerCountRequest.from_dict(request.args)
+    game.take_turn()
 
 # Define all @APP.routes above this line.
 if __name__ == '__main__':

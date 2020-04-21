@@ -93,6 +93,44 @@ class GameStateResponse(Message):
     """This is the client response indicating they are still connected."""
     connected: bool
 
+@attr.s(auto_attribs=True, slots=True)
+class JoinGameRequest(Message):
+    """This is the client request asking to join a game"""
+    name: str
+
+@attr.s(auto_attribs=True, slots=True)
+class JoinGameResponse(Message):
+    """This is the response to the client asking to join the game"""
+    client_id: str
+    accepted: bool
+
+@attr.s(auto_attribs=True, slots=True)
+class StartGameRequest(Message):
+    """This is the response to the client asking to join the game"""
+    client_id: str
+
+@attr.s(auto_attribs=True, slots=True)
+class StartGameResponse(Message):
+    """This is the response to the client asking to join the game"""
+    accepted: bool
+
+@attr.s(auto_attribs=True, slots=True)
+class PlayerCountRequest(Message):
+    """This is the response to the client asking to join the game"""
+
+@attr.s(auto_attribs=True, slots=True)
+class PlayerCountResponse(Message):
+    """This is the response to the client asking to join the game"""
+    count: int
+
+@attr.s(auto_attribs=True, slots=True)
+class GameStepRequest(Message):
+    """This is the response to the client asking to join the game"""
+
+@attr.s(auto_attribs=True, slots=True)
+class GameStepResponse(Message):
+    """This is the response to the client asking to join the game"""
+    success: bool
 
 def generate_message_id() -> int:
     return uuid.uuid4().fields[1]

@@ -11,6 +11,7 @@ services:
       DB_NAME: postgres
       DB_USER: postgres
       DB_PASSWORD: example
+      CLIENT_PORT: 5001
 
     ports:
       - 5000:5000
