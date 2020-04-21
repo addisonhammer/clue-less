@@ -14,38 +14,41 @@ START_GAME_ROUTE = 'api/start_game'
 PLAYER_COUNT_REQUEST_ROUTE = 'api/player_count'
 PLAYER_COUNT_UPDATE_ROUTE = 'join'
 
+
 class Server(object):
     """A boundary object that represents the Server connection."""
-    def __init__(self, player_name: str,
-                 address: str, port: Optional[int] = None):
-        self.player_name = player_name
+
+    def __init__(self, address: str, port: Optional[int] = None):
         self._address = address
         self._port = port
+        self.client_id = ''
 
-    def send_join_request(self):
-        request = JoinGameRequest(player=self.player_name)
+    def send_join_request(self, player_name):
+        request = JoinGameRequest(player=player_name)
         response = self._post_request(route=JOIN_GAME_ROUTE, request=request)
         join_response = JoinGameResponse.from_dict(response)
-        self.game_id = join_response.game_id
         self.client_id = join_response.client_id
         return join_response.accepted
 
-    def send_start_game_request(self, name : str):
-        request = StartGameRequest(client_id=self.client_id, game_id = self.game_id)
+    def send_start_game_request(self, game_id: str):
+        request = StartGameRequest(
+            client_id=self.client_id, game_id=game_id)
         response = self._post_request(route=START_GAME_ROUTE, request=request)
         start_response = StartGameResponse.from_dict(response)
         return start_response.accepted
 
     def send_player_count_request(self):
-        request = PlayerCountRequest(game_id = self.game_id)
-        response = self._post_request(route=PLAYER_COUNT_REQUEST_ROUTE, request=request)
+        request = PlayerCountRequest(self.client_id)
+        response = self._post_request(
+            route=PLAYER_COUNT_REQUEST_ROUTE, request=request)
         count_response = PlayerCountResponse.from_dict(response)
         return count_response.count
 
     def send_player_count_update(self, count):
         # this is for sending a player count update to the client
-        request = PlayerCountUpdateRequest(game_id = self.game_id, count = count)
-        response = self._post_request(route=PLAYER_COUNT_UPDATE_ROUTE, request=request)
+        request = PlayerCountUpdateRequest(self.client_id, count=count)
+        response = self._post_request(
+            route=PLAYER_COUNT_UPDATE_ROUTE, request=request)
         count_response = PlayerCountUpdateResponse.from_dict(response)
         return count_response.accepted
 
@@ -56,8 +59,7 @@ class Server(object):
         # TODO(ahammer): Add a timeout here and declare the client disconnected
         # TODO(ahammer): Do literally ANY error handling here
         logging.info('Sending request to %s', url)
-        logging.info('Contents: %s', request.to_dict)
+        logging.info('Contents: %s', request.to_dict())
         response = requests.get(url, params=request.to_dict())
         logging.info('Response: %s', response.headers)
         return response.json()
-
