@@ -23,11 +23,15 @@ services:
     build: 
       context: ./
       dockerfile: ./client/Dockerfile
-    command: python3 ./client/app.py
+    entrypoint:
+      - python3
+      - ./app/client/app.py
     environment: 
       SERVER_IP: 172.16.238.10
       SERVER_PORT: 5000
-
+    volumes:
+      - ./client:/app/client
+      - ./core:/app/core
     ports:
       - 5001:5000
     networks:

@@ -11,6 +11,7 @@ ENV PYTHONPATH="$PYTHONPATH:/core"
 RUN pip install attrs
 RUN pip install flask
 RUN pip install networkx
+RUN pip install requests
 
 # Full install of PostgreSQL python module
 RUN apk update

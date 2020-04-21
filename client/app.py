@@ -47,5 +47,5 @@ def join_game():
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    APP.run(host='0.0.0.0')
+    APP.run(debug=True, host='0.0.0.0')
     APP.secret_key == u'yolo'
