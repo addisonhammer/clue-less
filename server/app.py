@@ -5,6 +5,7 @@ import random
 import socket
 import time
 import uuid
+import asyncio
 
 import flask
 from flask import jsonify
@@ -16,11 +17,11 @@ from core import game_rules
 from clueless_db import Clueless_Database
 
 from core.client_boundary import Client
+from core.game import Game
 
 from core.messages import JoinGameRequest, JoinGameResponse
 from core.messages import StartGameRequest, StartGameResponse
 from core.messages import PlayerCountRequest, PlayerCountResponse
-from core.game import Game
 
 DB_NAME = os.environ.get('DB_NAME')
 DB_USER = os.environ.get('DB_USER')
@@ -102,24 +103,35 @@ clients = {}
 hostID = None
 game = None
 
+async def send_player_count(client, count):
+    client.send_player_count_update(count)
+    return
+
 @APP.route('/api/join_game', methods=['GET'])
 def join():
     global hostID
     global game
     
+    # parse input params
     join_request = JoinGameRequest.from_dict(request.args)
 
+    # get player count
     player_count = len(clients)
     if player_count >= MAX_PLAYERS:
         return JoinGameResponse(accepted = False, gameID = -1)
 
     client_id = database.generate_uuid()
 
-    if len(clients) == 0:
+    if player_count == 0:
         hostID = client_id
 
-    newClient = Client(join_request.name, request.remote_addr, CLIENT_PORT)
+    newClient = Client(join_request.player, request.remote_addr, CLIENT_PORT)
     clients[client_id] = newClient
+
+    player_count = len(clients)
+
+    for client in clients:
+        asyncio.create_task(send_player_count(client, player_count))
 
     return JoinGameResponse(client_id = client_id, accepted = True, gameID = 1)
 
@@ -141,7 +153,7 @@ def start_game():
 
 @APP.route('/api/number_of_players', methods=['GET'])
 def player_count():
-    start_request = PlayerCountRequest.from_dict(request.args)
+    num_player_request = PlayerCountRequest.from_dict(request.args)
     return PlayerCountResponse(count = len(clients))
 
 @APP.route('/api/step_game', methods=['GET'])

@@ -2,7 +2,6 @@ from typing import List, Tuple, Dict, Optional
 from enum import Enum
 import random
 import logging
-import uuid
 
 import networkx as nx
 
@@ -22,11 +21,8 @@ class Game(object):
 
     def __init__(self, clients: List[Client]):
         """Initialize the Game, given a list of clients"""
-        self.game_id = str(uuid.uuid4())
+
         self.clients = clients
-        # Attaches the clients to the Game (for upstream client management)
-        for client in self.clients:
-            client.game_id = self.game_id
 
         # First initialize the board, and the contained Room instances
         self.board = self._init_board()

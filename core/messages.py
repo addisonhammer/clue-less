@@ -93,10 +93,11 @@ class GameStateResponse(Message):
     """This is the client response indicating they are still connected."""
     connected: bool
 
+
 @attr.s(auto_attribs=True, slots=True)
 class JoinGameRequest(Message):
     """This is the client request asking to join a game"""
-    name: str
+
 
 @attr.s(auto_attribs=True, slots=True)
 class JoinGameResponse(Message):
@@ -104,33 +105,51 @@ class JoinGameResponse(Message):
     client_id: str
     accepted: bool
 
+
 @attr.s(auto_attribs=True, slots=True)
 class StartGameRequest(Message):
-    """This is the response to the client asking to join the game"""
+    """This is the client request to the server to start the game"""
     client_id: str
+
 
 @attr.s(auto_attribs=True, slots=True)
 class StartGameResponse(Message):
-    """This is the response to the client asking to join the game"""
+    """This is the response to the client asking to start the game"""
     accepted: bool
+
 
 @attr.s(auto_attribs=True, slots=True)
 class PlayerCountRequest(Message):
-    """This is the response to the client asking to join the game"""
+    """This is the request to the server for the current player count in a particular game"""
+
 
 @attr.s(auto_attribs=True, slots=True)
 class PlayerCountResponse(Message):
-    """This is the response to the client asking to join the game"""
+    """This is the reponse from the server for the player count"""
     count: int
+
 
 @attr.s(auto_attribs=True, slots=True)
 class GameStepRequest(Message):
-    """This is the response to the client asking to join the game"""
+    """This is the request to the server to step the game forward"""
+
 
 @attr.s(auto_attribs=True, slots=True)
 class GameStepResponse(Message):
-    """This is the response to the client asking to join the game"""
+    """This is the response to the client asking to step the game forward"""
     success: bool
+
+    
+@attr.s(auto_attribs=True, slots=True)
+class PlayerCountUpdateRequest(Message):
+    """This is the serving updating the client with the new player count"""
+    count: int
+
+
+@attr.s(auto_attribs=True, slots=True)
+class PlayerCountUpdateResponse(Message):
+    """This is the response to the server updating the player count"""
+    accepted: bool
 
 def generate_message_id() -> int:
     return uuid.uuid4().fields[1]

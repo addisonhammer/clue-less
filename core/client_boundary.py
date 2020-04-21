@@ -8,7 +8,6 @@ from core.messages import GameStateRequest, GameStateResponse
 from core.messages import PlayerMoveRequest, PlayerMoveResponse
 from core.messages import PlayerSuggestionRequest, PlayerSuggestionResponse, PlayerSuggestionResult
 from core.messages import PlayerAccusationRequest, PlayerAccusationResponse, PlayerAccusationResult
-from core.messages import JoinGameRequest, JoinGameResponse
 
 ACK = 'ack'
 
@@ -18,7 +17,6 @@ SUGGESTION_ROUTE = 'api/suggest'
 SUGGESTION_RESULT_ROUTE = 'api/suggest/result'
 ACCUSATION_ROUTE = 'api/accuse'
 ACCUSATION_ROUTE = 'api/accuse_result'
-JOIN_GAME_ROUTE = 'api/join_game'
 
 DEBUG = False  # Using mocky.io endpoints for testing
 DEBUG_ACK_ROUTE = '5e9e680f34000099b46eec98'
@@ -63,6 +61,7 @@ class Client(object):
         self.game_id = game_id
         self._address = address
         self._port = port
+        self.client_id = ""
 
     def send_game_state(self, players: List[Player],
                         active_player: Player) -> bool:
@@ -157,12 +156,6 @@ class Client(object):
         response = self._post_request(route=ACCUSATION_RESULT_ROUTE,
                                       request=request)
         return response[ACK]
-
-    def send_join_request(self, name : str):
-        request = JoinGameRequest(name=self.player_name)
-        response = self._post_request(route=JOIN_GAME_ROUTE, request=request)
-        join_response = JoinGameResponse.from_dict(response)
-        return (join_response.accepted, join_response.client_id)
 
     def _post_request(self, route, request) -> Dict[str, Any]:
         port = f':{self._port}' if self._port else ''
