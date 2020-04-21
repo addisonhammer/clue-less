@@ -2,10 +2,6 @@ FROM python:alpine
 
 EXPOSE 5000
 
-WORKDIR /
-ADD ./core /core
-ADD ./server /server
-
 ENV PYTHONPATH="$PYTHONPATH:/core"
 
 RUN pip install attrs
