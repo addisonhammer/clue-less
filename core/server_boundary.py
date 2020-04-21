@@ -28,7 +28,7 @@ class Server(object):
         response = self._post_request(route=JOIN_GAME_ROUTE, request=request)
         join_response = JoinGameResponse.from_dict(response)
         self.client_id = join_response.client_id
-        return join_response.player
+        return join_response.client_id
 
     def send_start_game_request(self):
         request = StartGameRequest(client_id=self.client_id)

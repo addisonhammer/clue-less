@@ -1,26 +1,30 @@
 <!doctype html>
+<div style="text-align:center">
 <title>Clue-Less</title>
 <h1>Who done it?</h1>
-<form name=accuse-form id=accuse-form class="form-inline" method="POST" action="/">
-    <label for="player">Your Name:</label>
-    <input name="player" id="player" required><br><br>
+<form name=suggestion-form id=suggestion-form class="form-inline" method="POST">
+
     <label for="suspect">Select the Suspect:</label>
-    <select name="suspect" id="suspect" form_id=accuse-form>
+    <select name="suspect" id="suspect" form_id=suggestion-form>
       {% for name in names %}
-      <option value="{{ name }}">{{ name }}</option>
+          <option value="{{ name }}">{{ name }}</option>
       {% endfor %}
     </select><br><br>
+
     <label for="weapon">Select the Weapon they used:</label>
     <select name="weapon" id="weapon" form_id=accuse-form>
       {% for weapon in weapons %}
-      <option value="{{ weapon }}">{{ weapon }}</option>
+          <option value="{{ weapon }}">{{ weapon }}</option>
       {% endfor %}
     </select><br><br>
+
     <label for="room">Select the Room they used it in:</label>
     <select name="room" id="room" form_id=accuse-form>
       {% for room in rooms %}
-      <option value="{{ room }}">{{ room }}</option>
+          <option value="{{ room }}">{{ room }}</option>
       {% endfor %}
     </select><br><br>
-    <input type="submit" value="Guess">
-  </form>
+
+    <input type="submit" value="Make a suggestion">
+</form>
+</div>

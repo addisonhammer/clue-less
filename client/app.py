@@ -1,19 +1,13 @@
-"""Example Client that generates a random accusation and sends it to the server."""
 import json
 import logging
 import os
-import random
-import socket
-import time
 
-from flask import Flask, request, render_template, jsonify
-import requests
+from flask import Flask, request, render_template, jsonify, redirect, url_for
 
 from core.messages import PlayerMoveRequest, PlayerMoveResponse
 from core.server_boundary import Server
 
-# from core import game_rules
-# from core import messages
+from core import game_const
 
 SERVER_IP = os.environ.get('SERVER_IP')
 SERVER_PORT = os.environ.get('SERVER_PORT')
@@ -22,22 +16,51 @@ SERVER_PORT = os.environ.get('SERVER_PORT')
 class App(Flask):
     server = Server(SERVER_IP, SERVER_PORT)
     player_name: str = ''
+    character: str = ''
     #  Add more attributes you need to access globally
 
 
 APP = App(__name__)
 
 
-@APP.route('/join', methods=['GET'])
+@APP.route('/join', methods=['GET', 'POST'])
 def join_game():
-    if request.method == 'GET':
-        logging.info('GET call, serving HOME template')
-        return render_template('home.html.jinja')
-    logging.info('Form Results: %s', request.form)
-    player_selection = request.form.get('player')
-    if player_selection:  # Add more error checking here
-        result = APP.server.send_join_request(player_selection)
-    return jsonify(result)
+    global client_id
+    if request.method == 'POST':
+        character_selection = request.form.get('character')
+        logging.info('Selected character: %s', character_selection)
+        if character_selection:
+            client_id = APP.server.send_join_request(character_selection)
+            logging.info("Client ID: %s", client_id)
+        return redirect(url_for('queue', client_id=client_id))
+
+    return render_template('home.html.jinja',
+                           characters=list(game_const.CHARACTERS))
+
+
+@APP.route('/queue/<client_id>', methods=['GET', 'POST'])
+def queue(client_id):
+    global game_id
+    if request.method == 'POST':
+        if "start_game" in request.form:
+            logging.info('Client %s request to start the game', client_id)
+            game_id = APP.server.send_start_game_request()
+            if not game_id:
+                return 'Please wait while we find an available game server for you.'
+            else:
+                logging.info("Game ID: %s", game_id)
+                return redirect(url_for('game', client_id=client_id, game_id=game_id))
+
+    return render_template('queue.html.jinja',
+                           pending=False)
+
+
+@APP.route('/game/<game_id>/<client_id>', methods=['GET', 'POST'])
+def game(client_id, game_id):
+    return render_template('suggestion.html.jinja',
+                           names=list(game_const.CHARACTERS),
+                           weapons=list(game_const.WEAPONS),
+                           rooms=list(game_const.ROOMS))
 
 
 @APP.route('/api/player_move', methods=['GET'])
