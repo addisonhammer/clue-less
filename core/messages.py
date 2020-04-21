@@ -7,6 +7,7 @@ import attr
 @attr.s(auto_attribs=True, slots=True)
 class Message(object):
     """Generic message template with built-in classmethods, functions etc."""
+    game_id: str
     player: str
 
     @classmethod

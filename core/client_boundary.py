@@ -19,9 +19,9 @@ ACCUSATION_ROUTE = 'api/accuse'
 ACCUSATION_ROUTE = 'api/accuse_result'
 
 DEBUG = False  # Using mocky.io endpoints for testing
-DEBUG_ACK_ROUTE = '5e9db5ab34000080676ee8c9'
-DEBUG_PLAYER_MOVE_ROUTE = '5e9db5b734000094546ee8cb'
-DEBUG_SUGGESTION_ROUTE = '5e9db5bf34000094546ee8cc'
+DEBUG_ACK_ROUTE = '5e9e680f34000099b46eec98'
+DEBUG_PLAYER_MOVE_ROUTE = '5e9e684334000037b56eec9a'
+DEBUG_SUGGESTION_ROUTE = '5e9e686e34000083b56eec9b'
 
 
 def _set_up_debug():
@@ -54,8 +54,11 @@ def _sort_cards(cards: List[Card]) -> Tuple[List[str], List[str], List[str]]:
 class Client(object):
     """A boundary object that represents the Client connection."""
 
-    def __init__(self, player_name: str, address: str, port: Optional[int]):
+    def __init__(self, player_name: str,
+                 address: str, port: Optional[int] = None,
+                 game_id: str = ''):
         self.player_name = player_name
+        self.game_id = game_id
         self._address = address
         self._port = port
 
@@ -63,14 +66,17 @@ class Client(object):
                         active_player: Player) -> bool:
         whereabouts = {player.name: player.room.name for player in players}
         current_turn = active_player.name
-        request = GameStateRequest(player=self.player_name,
+        request = GameStateRequest(game_id=self.game_id,
+                                   player=self.player_name,
                                    whereabouts=whereabouts,
                                    current_turn=current_turn)
-        response = self._post_request(route=GAME_STATE_ROUTE, request=request)
+        response = self._post_request(
+            route=GAME_STATE_ROUTE, request=request)
         return response[ACK]
 
     def send_move_request(self, valid_moves: List[Room]) -> Optional[Room]:
         request = PlayerMoveRequest(
+            game_id=self.game_id,
             player=self.player_name,
             move_options=[room.name for room in valid_moves]
         )
@@ -82,7 +88,8 @@ class Client(object):
 
     def send_suggestion_request(self, cards: List[Card]) -> List[Card]:
         suspect_cards, weapon_cards, room_cards = _sort_cards(cards)
-        request = PlayerSuggestionRequest(player=self.player_name,
+        request = PlayerSuggestionRequest(game_id=self.game_id,
+                                          player=self.player_name,
                                           suspects=suspect_cards,
                                           weapons=weapon_cards,
                                           rooms=room_cards)
@@ -99,6 +106,7 @@ class Client(object):
                                disproved_card: Optional[Card]):
         suspect_cards, weapon_cards, room_cards = _sort_cards(suggestion)
         request = PlayerSuggestionResult(
+            game_id=self.game_id,
             player=self.player_name,
             suspect=next(iter(suspect_cards), ''),
             weapon=next(iter(weapon_cards), ''),
@@ -109,7 +117,8 @@ class Client(object):
                 route=SUGGESTION_RESULT_ROUTE, request=request)
             return response[ACK]
 
-        request = PlayerSuggestionResult(player=self.player_name,
+        request = PlayerSuggestionResult(game_id=self.game_id,
+                                         player=self.player_name,
                                          disproved_by=disproved_by.name,
                                          disproved_card=disproved_card.name)
         response = self._post_request(route=SUGGESTION_RESULT_ROUTE,
@@ -119,6 +128,7 @@ class Client(object):
     def send_accusation_request(self, cards: List[Card]) -> List[Card]:
         suspect_cards, weapon_cards, room_cards = _sort_cards(cards)
         request = PlayerAccusationRequest(
+            game_id=self.game_id,
             player=self.player_name,
             suspects=next(iter(suspect_cards), ''),
             weapons=next(iter(weapon_cards), ''),
@@ -136,11 +146,12 @@ class Client(object):
     def send_accusation_result(self, correct: bool,
                                murder_deck: List[Card]) -> bool:
         suspect_cards, weapon_cards, room_cards = _sort_cards(murder_deck)
-        request = PlayerAccusationResult(player=self.player_name,
+        request = PlayerAccusationResult(game_id=self.game_id,
+                                         player=self.player_name,
                                          correct=correct,
-                                         suspect=suspect_cards[0],
-                                         weapon=weapon_cards[0],
-                                         room=room_cards[0])
+                                         suspect=next(iter(suspect_cards)),
+                                         weapon=next(iter(weapon_cards)),
+                                         room=next(iter(room_cards)))
         response = self._post_request(route=ACCUSATION_RESULT_ROUTE,
                                       request=request)
         return response[ACK]
