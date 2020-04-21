@@ -26,28 +26,28 @@ def handleGet():
                                  weapons=game_rules.WEAPONS)
 
 
-@APP.route('/', methods=['POST'])
-def handlePost():
-    url = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/api/test'
-    logging.info(url)
-    form_results = flask.request.form
-    logging.info('Form Results: %s', form_results)
+# @APP.route('/', methods=['POST'])
+# def handlePost():
+#     url = 'http://' + SERVER_IP + ':' + SERVER_PORT + '/api/test'
+#     logging.info(url)
+#     form_results = flask.request.form
+#     logging.info('Form Results: %s', form_results)
 
-    accusation = messages.PlayerAccusation(
-        message_id=messages.generate_message_id(),
-        player=form_results.get('player'),
-        suspect=form_results.get('suspect'),
-        weapon=form_results.get('weapon'),
-        room=form_results.get('room'),
-    )
+#     accusation = messages.PlayerAccusation(
+#         message_id=messages.generate_message_id(),
+#         player=form_results.get('player'),
+#         suspect=form_results.get('suspect'),
+#         weapon=form_results.get('weapon'),
+#         room=form_results.get('room'),
+#     )
 
-    response = requests.get(url, params=accusation.to_dict()).json()
+#     response = requests.get(url, params=accusation.to_dict()).json()
 
-    return flask.render_template(
-        'result.html.jinja',
-        **accusation.to_dict(),
-        valid=response['correct'],
-    )
+#     return flask.render_template(
+#         'result.html.jinja',
+#         **accusation.to_dict(),
+#         valid=response['correct'],
+#     )
 
 
 if __name__ == '__main__':
