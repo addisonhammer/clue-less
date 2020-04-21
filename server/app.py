@@ -80,6 +80,21 @@ def index():
     return f'This is the Server, hostID={APP.hostID}'
 
 
+@APP.route('/debug/clients')
+def debug_clients():
+    return jsonify([client.__dict__ for client in APP.clients])
+
+
+@APP.route('/debug/games')
+def debug_games():
+    return jsonify([game.__dict__ for game in APP.games])
+
+
+@APP.route('/debug/clear')
+def debug_clear():
+    return 'NotImplemented'
+
+
 @APP.route('/api/join_game', methods=['GET'])
 def join():
     # parse input params
@@ -92,7 +107,7 @@ def join():
         return jsonify(JoinGameResponse(existing[0].client_id,
                                         accepted=False).to_dict())
 
-    player = join_request.player[0]
+    player = join_request.player
     new_client = Client(player,
                         src_ip,
                         CLIENT_PORT)
@@ -114,7 +129,7 @@ def start_game():
     player_count = len(APP.waiting_clients)
     if player_count < MIN_PLAYERS:
         response = StartGameResponse(
-            player=start_request.player[0],
+            player=start_request.player,
             game_id='',
             accepted=False,
             player_count=player_count)
