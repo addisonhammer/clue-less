@@ -1,169 +1,156 @@
-import json
+from concurrent.futures import Future, ThreadPoolExecutor
 import logging
 import os
-import random
-import socket
 import time
+from typing import List
 import uuid
-import asyncio
 
-import flask
-from flask import jsonify
-from flask import request
-
-from core import messages
-from core import game_rules
-
-from clueless_db import Clueless_Database
+from flask import Flask, request, jsonify
 
 from core.client_boundary import Client
 from core.game import Game
-
 from core.messages import JoinGameRequest, JoinGameResponse
 from core.messages import StartGameRequest, StartGameResponse
 from core.messages import PlayerCountRequest, PlayerCountResponse
 
-DB_NAME = os.environ.get('DB_NAME')
-DB_USER = os.environ.get('DB_USER')
-DB_PASSWORD = os.environ.get('DB_PASSWORD')
-DB_ADDRESS = os.environ.get('DB_ADDRESS')
 
 CLIENT_PORT = os.environ.get('CLIENT_PORT')
 
 MIN_PLAYERS = 3
 MAX_PLAYERS = 6
 
-database_settings = {
-    'database': DB_NAME,
-    'user': DB_USER,
-    'password': DB_PASSWORD,
-    'host': DB_ADDRESS,
-}
+DEBUG = False
 
-# Setup database
-database = Clueless_Database(database_settings)
-game_id = database.generate_uuid()
 
-# Give database time to get up and running.
-ATTEMPTS = 5
-for attempt in range(ATTEMPTS):
-    if database.connect():
-        break
-    print('Waiting for database to start: Attempt ' + str(attempt + 1) + '/' + str(ATTEMPTS))
-    time.sleep(1)
+class App(Flask):
+    hostID: str = str(uuid.uuid4())
+    clients: List[Client] = []
+    games: List[Game] = []
+    futures: List[Future] = []
+    executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=5)
 
-APP = flask.Flask(__name__)
+    @property
+    def waiting_clients(self) -> List[Client]:
+        return [client for client in self.clients
+                if not client.game_id]
+
+    def get_game(self, game_id: str) -> Game:
+        return next((game for game in self.games
+                     if game.game_id == game_id), None)
+
+    def get_game_clients(self, game_id: str) -> List[Client]:
+        return [client for client in self.clients
+                if client.game_id == game_id]
+
+    def start_game(self, game_id: str) -> bool:
+        game = self.get_game(game_id)
+        if not game:
+            return False
+        game_thread = self.executor.submit(self.run_game, game)
+        game_thread.add_done_callback(end_game)
+        self.futures.append(game_thread)
+        return True
+
+    def run_game(self, game: Game) -> str:
+        game_result = ''
+        # Wait a second for startup
+        time.sleep(1)
+        while not game_result:
+            game.take_turn()
+            game_result = game.result
+            time.sleep(0.1)  # Give other threads a chance
+        return self, game.game_id
+
+
+def end_game(future: Future):
+    app, game_id = future.result()
+    winner = app.get_game(game_id).result
+    clients = app.get_game_clients(game_id)
+    for client in clients:
+        client.end_game_request(winner)
+        app.remove_client(client.client_id)
+    app.remove_game(game_id)
+
+
+APP = App(__name__)
 
 
 @APP.route('/')
 def index():
-    return f'This is the Server'
+    return f'This is the Server, hostID={APP.hostID}'
 
-# @APP.route('/api/test', methods=['GET'])
-# def handleGet():
-#     raw_data = dict(flask.request.args)
-#     accusation = messages.PlayerAccusation(**raw_data)
-#     logging.info('GET call, Received: %s', accusation)
-
-#     result = database.validate_accusation(
-#         game_id=game_id,
-#         suspect_card=accusation.suspect,
-#         weapon_card=accusation.weapon,
-#         room_card=accusation.room)
-
-#     response = {'correct': result}
-
-#     return jsonify(response)
-
-@APP.route('/api/db/create_database', methods=['GET'])
-def setupDB():
-    create_result = database.create_database()
-    logging.info(create_result)
-    return 'Database Created!'
-
-@APP.route('/api/setup_game', methods=['GET'])
-def setupGame():
-    user_id = database.generate_uuid()
-    setup_result = database.start_game(game_id=game_id,
-                                       user_id=user_id,
-                                       user_name='admin',
-                                       country_code=1,
-                                       status='OK')
-    logging.info(setup_result)
-    murder_deck_result = database.set_murder_deck(
-        game_id=game_id,
-        suspect_card=random.choice(game_rules.NAMES),
-        weapon_card=random.choice(game_rules.WEAPONS),
-        room_card=random.choice(game_rules.ROOMS)
-    )
-    logging.info(murder_deck_result)
-    return 'Game Setup Complete!'
-
-clients = {}
-hostID = None
-game = None
-
-async def send_player_count(client, count):
-    client.send_player_count_update(count)
-    return
 
 @APP.route('/api/join_game', methods=['GET'])
 def join():
-    global hostID
-    global game
-    
     # parse input params
     join_request = JoinGameRequest.from_dict(request.args)
+    src_ip = request.remote_addr
+    existing = [client for client in APP.clients
+                if client.address == src_ip]
 
-    # get player count
-    player_count = len(clients)
-    if player_count >= MAX_PLAYERS:
-        return JoinGameResponse(accepted = False, gameID = -1)
+    if existing and not DEBUG:
+        return jsonify(JoinGameResponse(existing[0].client_id,
+                                        accepted=False).to_dict())
 
-    client_id = database.generate_uuid()
+    player = join_request.player[0]
+    new_client = Client(player,
+                        src_ip,
+                        CLIENT_PORT)
+    APP.clients.append(new_client)
 
-    if player_count == 0:
-        hostID = client_id
+    # get player count without a running game
+    player_count = len(APP.waiting_clients)
+    return jsonify(
+        JoinGameResponse(player=player,
+                         client_id=new_client.client_id,
+                         accepted=True,
+                         player_count=player_count).to_dict())
 
-    newClient = Client(join_request.player, request.remote_addr, CLIENT_PORT)
-    clients[client_id] = newClient
-
-    player_count = len(clients)
-
-    for client in clients:
-        asyncio.create_task(send_player_count(client, player_count))
-
-    return JoinGameResponse(client_id = client_id, accepted = True, gameID = 1)
 
 @APP.route('/api/start_game', methods=['GET'])
 def start_game():
-    global hostID
-    global game
-
     start_request = StartGameRequest.from_dict(request.args)
 
-    player_count = len(clients)
-    if player_count < MIN_PLAYERS or player_count > MAX_PLAYERS:
-        return StartGameResponse(accepted = False)
+    player_count = len(APP.waiting_clients)
+    if player_count < MIN_PLAYERS:
+        response = StartGameResponse(
+            player=start_request.player[0],
+            game_id='',
+            accepted=False,
+            player_count=player_count)
+        return jsonify(response.to_dict())
 
-    if hostID == start_request.client_id:
-        game = Game(list(clients.values()))
+    if player_count > MAX_PLAYERS:
+        game_clients = APP.waiting_clients[:MAX_PLAYERS-1]
 
-    return StartGameResponse(accepted = True)
+    game_clients = APP.waiting_clients
+    game = Game(game_clients)
+    APP.games.append(game)
+    result = APP.start_game(game.game_id)
 
-@APP.route('/api/number_of_players', methods=['GET'])
+    response = StartGameResponse(player=start_request.player[0],
+                                 game_id=game.game_id,
+                                 accepted=result,
+                                 player_count=player_count)
+    return jsonify(response.to_dict())
+
+
+@APP.route('/api/player_count', methods=['GET'])
 def player_count():
-    num_player_request = PlayerCountRequest.from_dict(request.args)
-    return PlayerCountResponse(count = len(clients))
+    player_count_request = PlayerCountRequest.from_dict(request.args)
+    return PlayerCountResponse(player=player_count_request.player,
+                               count=len(APP.waiting_clients))
 
-@APP.route('/api/step_game', methods=['GET'])
-def step_game():
-    global game
-    step_request = PlayerCountRequest.from_dict(request.args)
-    game.take_turn()
 
 # Define all @APP.routes above this line.
+
+
+def main():
+    APP.config['PROPAGATE_EXCEPTIONS'] = True
+    APP.secret_key == u'yolo'
+    APP.run(host='0.0.0.0')
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    APP.run(host='0.0.0.0')
-    APP.secret_key == u'yolo'
+    main()

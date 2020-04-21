@@ -1,5 +1,6 @@
 from typing import Dict, List, Any, Tuple, Optional
 import logging
+import uuid
 
 import requests
 
@@ -19,12 +20,14 @@ ACCUSATION_ROUTE = 'api/accuse'
 ACCUSATION_ROUTE = 'api/accuse_result'
 
 DEBUG = False  # Using mocky.io endpoints for testing
-DEBUG_ACK_ROUTE = '5e9e680f34000099b46eec98'
-DEBUG_PLAYER_MOVE_ROUTE = '5e9e684334000037b56eec9a'
-DEBUG_SUGGESTION_ROUTE = '5e9e686e34000083b56eec9b'
+DEBUG_ACK_ROUTE = 'v2/5e9e680f34000099b46eec98'
+DEBUG_PLAYER_MOVE_ROUTE = 'v2/5e9e684334000037b56eec9a'
+DEBUG_SUGGESTION_ROUTE = 'v2/5e9e686e34000083b56eec9b'
 
 
 def _set_up_debug():
+    global DEBUG
+    DEBUG = True
     global GAME_STATE_ROUTE
     GAME_STATE_ROUTE = DEBUG_ACK_ROUTE
     global PLAYER_MOVE_ROUTE
@@ -59,9 +62,9 @@ class Client(object):
                  game_id: str = ''):
         self.player_name = player_name
         self.game_id = game_id
-        self._address = address
+        self.address = address if not DEBUG else 'www.mocky.io'
         self._port = port
-        self.client_id = ""
+        self.client_id = str(uuid.uuid4())
 
     def send_game_state(self, players: List[Player],
                         active_player: Player) -> bool:
@@ -159,7 +162,7 @@ class Client(object):
 
     def _post_request(self, route, request) -> Dict[str, Any]:
         port = f':{self._port}' if self._port else ''
-        url = f'http://{self._address}{port}/{route}'
+        url = f'http://{self.address}{port}/{route}'
         # This sends the request to the client and blocks till we get a response
         # TODO(ahammer): Add a timeout here and declare the client disconnected
         # TODO(ahammer): Do literally ANY error handling here
@@ -168,4 +171,3 @@ class Client(object):
         response = requests.get(url, params=request.to_dict())
         logging.info('Response: %s', response.headers)
         return response.json()
-
