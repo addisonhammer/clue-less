@@ -28,14 +28,13 @@ class Server(object):
         response = self._post_request(route=JOIN_GAME_ROUTE, request=request)
         join_response = JoinGameResponse.from_dict(response)
         self.client_id = join_response.client_id
-        return join_response.accepted
+        return join_response.player
 
-    def send_start_game_request(self, game_id: str):
-        request = StartGameRequest(
-            client_id=self.client_id, game_id=game_id)
+    def send_start_game_request(self):
+        request = StartGameRequest(client_id=self.client_id)
         response = self._post_request(route=START_GAME_ROUTE, request=request)
         start_response = StartGameResponse.from_dict(response)
-        return start_response.accepted
+        return start_response.game_id
 
     def send_player_count_request(self):
         request = PlayerCountRequest(self.client_id)

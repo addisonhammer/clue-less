@@ -121,59 +121,54 @@ class JoinGameRequest(Message):
 @attr.s(auto_attribs=True, slots=True)
 class JoinGameResponse(Message):
     """This is the response to the client asking to join the game"""
-    player: str
     client_id: str
-    accepted: bool
-    player_count: int
+    player: str
 
 
 @attr.s(auto_attribs=True, slots=True)
 class StartGameRequest(Message):
     """This is the client request to the server to start the game"""
-    player: str
     client_id: str
 
 
 @attr.s(auto_attribs=True, slots=True)
 class StartGameResponse(Message):
     """This is the response to the client asking to start the game"""
-    player: str
+    client_id: str
     game_id: str
-    accepted: bool
-    player_count: int
 
 
 @attr.s(auto_attribs=True, slots=True)
 class PlayerCountRequest(Message):
     """This is the request to the server for the current player count in a particular game"""
-    player: str
+    client_id: str
 
 
 @attr.s(auto_attribs=True, slots=True)
 class PlayerCountResponse(Message):
     """This is the reponse from the server for the player count"""
-    player: str
+    client_id: str
     count: int
 
 
-@attr.s(auto_attribs=True, slots=True)
-class GameStepRequest(Message):
-    """This is the request to the server to step the game forward"""
+# @attr.s(auto_attribs=True, slots=True)
+# class GameStepRequest(Message):
+#     """This is the request to the server to step the game forward"""
 
 
-@attr.s(auto_attribs=True, slots=True)
-class GameStepResponse(Message):
-    """This is the response to the client asking to step the game forward"""
-    success: bool
+# @attr.s(auto_attribs=True, slots=True)
+# class GameStepResponse(Message):
+#     """This is the response to the client asking to step the game forward"""
+#     success: bool
 
 
-@attr.s(auto_attribs=True, slots=True)
-class PlayerCountUpdateRequest(Message):
-    """This is the server updating the client with the new player count"""
-    count: int
+# @attr.s(auto_attribs=True, slots=True)
+# class PlayerCountUpdateRequest(Message):
+#     """This is the server updating the client with the new player count"""
+#     count: int
 
 
-@attr.s(auto_attribs=True, slots=True)
-class PlayerCountUpdateResponse(Message):
-    """This is the response to the server updating the player count"""
-    accepted: bool
+# @attr.s(auto_attribs=True, slots=True)
+# class PlayerCountUpdateResponse(Message):
+#     """This is the response to the server updating the player count"""
+#     accepted: bool
