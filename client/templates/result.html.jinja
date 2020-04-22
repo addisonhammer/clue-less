@@ -1,17 +1,23 @@
 <!doctype html>
+<div style="text-align:center">
 <title>Clue-Less</title>
+<h1>Who done it?</h1>
+    <p>Your Guess was {{ suspect }} in the {{ room }} with the {{ weapon }}...</p>
+    <p>Your Accusation was
+      {% if result %}
+      Correct!
+      {% else %}
+      Incorrect!
+      {% endif %}
+    </p>
 
-<h1>Your Guess was {{ suspect }} in the {{ room }} with the {{ weapon }}...</h1>
-(sent by: {{player}})
-<h1>Your Accusation was 
-  {% if valid %}
-  Correct!
-  {% else %}
-  Incorrect!
-  {% endif %}
-</h1>
+    <form method="post">
+      <input type="submit" value="Make an Accusation">
+      <input type="hidden" id="player" name="player" value={{player}}>
+    </form>
 
-{# <form method="post">
-  <input type="submit" value="Guess Again">
-  <input type="hidden" id="player" name="player" value={{player}}>
-</form> #}
+    <form method="post">
+      <input type="submit" value="Move">
+      <input type="hidden" id="player" name="player" value={{player}}>
+    </form>
+</div>

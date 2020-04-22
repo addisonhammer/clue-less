@@ -72,6 +72,12 @@ def game(game_id, client_id):
         form_results = request.form
         logging.info("Sending suggestion request data: %s", form_results)
 
+        return render_template('result.html.jinja',
+                               suspect=form_results.get("suspect"),
+                               weapon=form_results.get("weapon"),
+                               room=form_results.get("room"),
+                               result=False)
+
         # suggestion = messages.PlayerSuggestionRequest(
         #     game_id=game_id,
         #     player=client_id,

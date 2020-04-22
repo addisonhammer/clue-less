@@ -15,7 +15,7 @@ from core.messages import PlayerCountRequest, PlayerCountResponse
 
 CLIENT_PORT = os.environ.get('CLIENT_PORT')
 
-MIN_PLAYERS = 1
+MIN_PLAYERS = 3
 MAX_PLAYERS = 6
 
 DEBUG = False
