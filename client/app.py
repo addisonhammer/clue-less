@@ -49,15 +49,16 @@ def queue(client_id):
                 return 'Please wait while we find an available game server for you.'
             else:
                 logging.info("Game ID: %s", game_id)
-                return redirect(url_for('game', client_id=client_id, game_id=game_id))
+                return redirect(url_for('game', game_id=game_id))
 
     return render_template('queue.html.jinja',
                            pending=False)
 
 
-@APP.route('/game/<game_id>/<client_id>', methods=['GET', 'POST'])
-def game(client_id, game_id):
-    return render_template('suggestion.html.jinja',
+@APP.route('/game/<game_id>', methods=['GET', 'POST'])
+def game(game_id):
+    logging.info('Game %s has started', client_id)
+    return render_template('game.html.jinja',
                            names=list(game_const.CHARACTERS),
                            weapons=list(game_const.WEAPONS),
                            rooms=list(game_const.ROOMS))

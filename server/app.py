@@ -13,7 +13,6 @@ from core.messages import JoinGameRequest, JoinGameResponse
 from core.messages import StartGameRequest, StartGameResponse
 from core.messages import PlayerCountRequest, PlayerCountResponse
 
-
 CLIENT_PORT = os.environ.get('CLIENT_PORT')
 
 MIN_PLAYERS = 3
@@ -119,8 +118,8 @@ def join():
                          client_id=new_client.client_id).to_dict())
 
 
-@APP.route('/api/start_game', methods=['GET'])
-def start_game():
+@APP.route('/api/request_game', methods=['GET'])
+def request_game():
     start_request = StartGameRequest.from_dict(request.args)
 
     player_count = len(APP.waiting_clients)
@@ -129,15 +128,23 @@ def start_game():
         return jsonify(response.to_dict())
 
     if player_count > MAX_PLAYERS:
-        game_clients = APP.waiting_clients[:MAX_PLAYERS-1]
+        game_clients = APP.waiting_clients[:MAX_PLAYERS - 1]
 
+    game_clients = APP.waiting_clients
+    game = Game(game_clients)
+
+    response = StartGameResponse(game_id=game.game_id)
+    return jsonify(response.to_dict())
+
+
+@APP.route('/api/start_game', methods=['GET'])
+def start_game():
     game_clients = APP.waiting_clients
     game = Game(game_clients)
     APP.games.append(game)
     result = APP.start_game(game.game_id)
 
-    response = StartGameResponse(game_id=game.game_id)
-    return jsonify(response.to_dict())
+    return result
 
 
 @APP.route('/api/player_count', methods=['GET'])
