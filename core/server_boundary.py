@@ -10,7 +10,7 @@ from core.messages import PlayerCountRequest, PlayerCountResponse
 from core.messages import PlayerCountUpdateRequest, PlayerCountUpdateResponse
 
 JOIN_GAME_ROUTE = 'api/join_game'
-START_GAME_ROUTE = 'api/start_game'
+REQUEST_GAME_ROUTE = 'api/request_game'
 PLAYER_COUNT_REQUEST_ROUTE = 'api/player_count'
 PLAYER_COUNT_UPDATE_ROUTE = 'join'
 
@@ -28,11 +28,11 @@ class Server(object):
         response = self._post_request(route=JOIN_GAME_ROUTE, request=request)
         join_response = JoinGameResponse.from_dict(response)
         self.client_id = join_response.client_id
-        return join_response.player
+        return join_response.client_id
 
     def send_start_game_request(self):
         request = StartGameRequest(client_id=self.client_id)
-        response = self._post_request(route=START_GAME_ROUTE, request=request)
+        response = self._post_request(route=REQUEST_GAME_ROUTE, request=request)
         start_response = StartGameResponse.from_dict(response)
         return start_response.game_id
 
@@ -45,7 +45,7 @@ class Server(object):
 
     def send_player_count_update(self, count):
         # this is for sending a player count update to the client
-        request = PlayerCountUpdateRequest(self.client_id, count=count)
+        request = PlayerCountUpdateRequest(self.client_id)
         response = self._post_request(
             route=PLAYER_COUNT_UPDATE_ROUTE, request=request)
         count_response = PlayerCountUpdateResponse.from_dict(response)

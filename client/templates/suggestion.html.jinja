@@ -1,0 +1,43 @@
+<!doctype html>
+<div style="text-align:center">
+    <title>Clue-Less</title>
+    <h1>Who done it?</h1>
+    <h2>Your turn</h2>
+    <div class="row" style="display: flex; justify-content: space-between;">
+          <div class="column"></div>
+            {% for character in characters %}
+                <div class="column" style="border-style: solid; background-color: yellow; padding: 50px;">
+                    <h2> Player: {{ character }} </h2>
+                    <h3> Location: Hall </h3>
+                    <form name=suggestion-form id=suggestion-form class="form-inline" method="POST">
+
+                        <label for="suspect">Select the Suspect:</label>
+                        <select name="suspect" id="suspect" form_id=suggestion-form>
+                          {% for name in names %}
+                              <option value="{{ name }}">{{ name }}</option>
+                          {% endfor %}
+                        </select><br><br>
+
+                        <label for="weapon">Select the Weapon they used:</label>
+                        <select name="weapon" id="weapon" form_id=accuse-form>
+                          {% for weapon in weapons %}
+                              <option value="{{ weapon }}">{{ weapon }}</option>
+                          {% endfor %}
+                        </select><br><br>
+
+                        <label for="room">Select the Room they used it in:</label>
+                        <select name="room" id="room" form_id=accuse-form>
+                          {% for room in rooms %}
+                              <option value="{{ room }}">{{ room }}</option>
+                          {% endfor %}
+                        </select><br><br>
+
+                        <input type="submit" value="Make a suggestion">
+                    </form>
+
+                </div>
+            {% endfor %}
+          <div class="column"></div>
+    </div>
+</div>
+
