@@ -21,9 +21,9 @@ class PlayerSuggestionRequest(Message):
     """This is a Server request for a client to make a Suggestion"""
     game_id: str
     player: str
-    suspects: List[str]
-    weapons: List[str]
-    rooms: List[str]
+    suspects: str
+    weapons: str
+    rooms: str
 
 
 @attr.s(auto_attribs=True, slots=True)
