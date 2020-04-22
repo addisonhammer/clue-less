@@ -102,6 +102,7 @@ class GameStateRequest(Message):
     client_id: str
     whereabouts: Dict[str, str]  # The Room.name (location) of each Player.name
     current_turn: str  # The Player.name of the current turn
+    player_cards: List[str]  # The cards in the player's hand
 
 
 # @attr.s(auto_attribs=True, slots=True)

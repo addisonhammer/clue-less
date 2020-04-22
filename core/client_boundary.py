@@ -48,11 +48,13 @@ class Client(object):
                         active_player: Player) -> bool:
         logging.info('Sending Game State to %s', self.player_name)
         whereabouts = {player.name: player.room.name for player in players}
+        player_cards = [card.name for card in active_player.cards]
         current_turn = active_player.name
         request = GameStateRequest(game_id=self.game_id,
                                    client_id=self.client_id,
                                    whereabouts=whereabouts,
-                                   current_turn=current_turn)
+                                   current_turn=current_turn,
+                                   player_cards=player_cards)
         response = self._post_request(
             route=GAME_STATE_ROUTE, request=request)
         return response[ACK]
@@ -73,6 +75,7 @@ class Client(object):
     def send_suggestion_request(self, cards: List[Card]) -> List[Card]:
         logging.info('Sending Suggestion Request to %s', self.player_name)
         suspect_cards, weapon_cards, room_cards = _sort_cards(cards)
+        logging.info('Sorted Cards: %s', _sort_cards(cards))
         request = PlayerSuggestionRequest(game_id=self.game_id,
                                           client_id=self.client_id,
                                           suspects=suspect_cards,
@@ -90,6 +93,8 @@ class Client(object):
                                disproved_by: Optional[Player],
                                disproved_card: Optional[Card]):
         logging.info('Sending Suggestion Results to %s', self.player_name)
+        # logging.info('Suspects: %s, Weapons: %s, Rooms: %s',
+        #              suspect_cards, weapon_cards, room_cards)
         suspect_cards, weapon_cards, room_cards = _sort_cards(suggestion)
         request = PlayerSuggestionResult(
             game_id=self.game_id,
@@ -98,7 +103,8 @@ class Client(object):
             weapon=next(iter(weapon_cards), ''),
             room=next(iter(room_cards), ''))
         # Suggestion was not disproved
-        if not disproved_by or not disproved_card:
+        if not disproved_by:
+            logging.info('Suggestion not Disproved!')
             response = self._post_request(
                 route=SUGGESTION_RESULT_ROUTE, request=request)
             return response[ACK]
@@ -117,9 +123,9 @@ class Client(object):
         request = PlayerAccusationRequest(
             game_id=self.game_id,
             client_id=self.client_id,
-            suspects=next(iter(suspect_cards), ''),
-            weapons=next(iter(weapon_cards), ''),
-            rooms=next(iter(room_cards), ''))
+            suspects=suspect_cards,
+            weapons=weapon_cards,
+            rooms=room_cards)
         response = self._post_request(route=ACCUSATION_ROUTE, request=request)
         player_accusation = PlayerAccusationResponse.from_dict(response)
         if not player_accusation:
@@ -153,5 +159,5 @@ class Client(object):
         logging.info('Sending request to %s', url)
         logging.info('Contents: %s', request.to_dict())
         response = requests.get(url, params=request.to_dict())
-        logging.info('Response: %s', response.__dict__)
+        # logging.info('Response: %s', response.__dict__)
         return response.json()

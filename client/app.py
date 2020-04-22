@@ -2,7 +2,9 @@ from enum import Enum
 import json
 import logging
 import os
+import random
 import time
+from typing import List
 
 from flask import Flask, request, render_template, jsonify, redirect, url_for
 
@@ -44,7 +46,30 @@ class App(Flask):
     accuse_results: messages.PlayerAccusationResult
     game_id: str = ''
     client_id: str = ''
+    seen_cards: List[str] = []
+    player_deck: List[str] = []
     #  Add more attributes you need to access globally
+
+    def strategize_options(self, all_weapons: List[str], all_suspects: List[str],
+                           all_rooms: List[str]):
+        """Automatically reduce options based on our hand and cards we've seen."""
+        # logging.info('Player Deck: %s', self.player_deck)
+        # logging.info('Seen Cards: %s', self.seen_cards)
+
+        weapons = [weapon for weapon in all_weapons
+                   if weapon not in (self.player_deck + self.seen_cards)]
+        suspects = [suspect for suspect in all_suspects
+                    if suspect not in (self.player_deck + self.seen_cards)]
+        rooms = [room for room in all_rooms
+                 if room not in (self.player_deck + self.seen_cards)]
+
+        if not weapons:
+            weapons = all_weapons
+        if not suspects:
+            suspects = all_suspects
+        if not rooms:
+            rooms = all_rooms
+        return weapons, suspects, rooms
 
 
 APP = App(__name__)
@@ -66,7 +91,9 @@ def join_game():
             logging.info("Client ID: %s", join_response.client_id)
             APP.characters.append(join_response.player)
             APP.client_ids.append(join_response.client_id)
+
             APP.client_id = join_response.client_id
+            APP.player_name = join_response.player
         return redirect(url_for('queue', client_id=APP.client_id))
 
     return render_template('home.html.jinja',
@@ -165,28 +192,32 @@ def move(game_id, client_id):
 
 @APP.route('/api/game_state', methods=['GET'])
 def api_game_state():
-    logging.info('Received api_game_state Request: %s', request.args)
-    game_state = messages.GameStateRequest.from_dict(dict(request.args))
+    # logging.info('Received api_game_state Request: %s', request.args)
+    game_state = messages.GameStateRequest.from_dict(
+        request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', game_state)
     APP.game_state = game_state
-    APP.game_id = game_state.game_id
+    APP.player_deck = game_state.player_cards
+    APP.game_id = game_state.game_id[0]
     APP.next_action = Actions.WAIT
-    time.sleep(0.5)
     response = {'ack': True}
-    logging.info('Sending Response: %s', response)
+    # logging.info('Sending Response: %s', response)
     return jsonify(response)
 
 
 @APP.route('/api/player_move', methods=['GET'])
 def api_player_move():
-    logging.info('Received api_player_move Request: %s', request.args)
-    move_request = messages.PlayerMoveRequest.from_dict(dict(request.args))
+    # logging.info('Received api_player_move Request: %s', request.args)
+    move_request = messages.PlayerMoveRequest.from_dict(
+        request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', move_request)
     APP.move_request = move_request
     APP.next_action = Actions.MOVE
     time.sleep(0.5)
+    move_selection = random.choice(move_request.move_options)
     response = messages.PlayerMoveResponse(game_id=APP.game_id,
-                                           client_id=APP.client_id)
+                                           client_id=APP.client_id,
+                                           move=move_selection)
 
     logging.info('Sending Response: %s', response)
     return jsonify(response.to_dict())
@@ -194,59 +225,90 @@ def api_player_move():
 
 @APP.route('/api/suggest', methods=['GET'])
 def api_suggest():
-    logging.info('Received api_suggest Request: %s', request.args)
+    # logging.info('Received api_suggest Request: %s', request.args)
     suggest_request = messages.PlayerSuggestionRequest.from_dict(
-        dict(request.args))
+        request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', suggest_request)
     APP.suggest_request = suggest_request
     APP.next_action = Actions.SUGGEST
     time.sleep(0.5)
+    weapons, suspects, rooms = APP.strategize_options(suggest_request.weapons,
+                                                      suggest_request.suspects,
+                                                      suggest_request.rooms)
+    logging.info('Weapons: %s, Suspects: %s, Rooms: %s',
+                 weapons, suspects, rooms)
+    room = random.choice(rooms)
+    weapon = random.choice(weapons)
+    suspect = random.choice(suspects)
     response = messages.PlayerSuggestionResponse(game_id=APP.game_id,
-                                                 client_id=APP.client_id)
+                                                 client_id=APP.client_id,
+                                                 room=room,
+                                                 suspect=suspect,
+                                                 weapon=weapon)
     logging.info('Sending Response: %s', response)
     return jsonify(response.to_dict())
 
 
 @APP.route('/api/suggest_result', methods=['GET'])
 def api_suggest_result():
-    logging.info('Received api_suggest_result Request: %s', request.args)
+    # logging.info('Received api_suggest_result Request: %s', request.args)
     suggest_results = messages.PlayerSuggestionResult.from_dict(
-        dict(request.args))
+        request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', suggest_results)
     APP.suggest_results = suggest_results
+    APP.seen_cards.append(suggest_results.disproved_card[0])
     APP.next_action = Actions.WAIT
-    time.sleep(0.5)
     response = {'ack': True}
-    logging.info('Sending Response: %s', response)
+    # logging.info('Sending Response: %s', response)
     return jsonify(response)
 
 
 @APP.route('/api/accuse', methods=['GET'])
 def api_accuse():
-    logging.info('Received api_accuse Request: %s', request.args)
+    # logging.info('Received api_accuse Request: %s', request.args)
     accuse_request = messages.PlayerAccusationRequest.from_dict(
-        dict(request.args))
+        request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', accuse_request)
     APP.accuse_request = accuse_request
     APP.next_action = Actions.ACCUSE
     time.sleep(0.5)
+    weapons, suspects, rooms = APP.strategize_options(accuse_request.weapons,
+                                                      accuse_request.suspects,
+                                                      accuse_request.rooms)
+    logging.info('Weapons: %s, Suspects: %s, Rooms: %s',
+                 weapons, suspects, rooms)
+    # Only select an accusation if we're pretty sure!
+    if (
+            len(rooms) +
+            len(weapons) +
+            len(suspects)) <= 4:
+        room = random.choice(rooms)
+        weapon = random.choice(weapons)
+        suspect = random.choice(suspects)
+    else:
+        room = ''
+        weapon = ''
+        suspect = ''
+
     response = messages.PlayerAccusationResponse(game_id=APP.game_id,
-                                                 client_id=APP.client_id)
+                                                 client_id=APP.client_id,
+                                                 room=room,
+                                                 weapon=weapon,
+                                                 suspect=suspect)
     logging.info('Sending Response: %s', response)
     return jsonify(response.to_dict())
 
 
 @APP.route('/api/accuse_result', methods=['GET'])
 def api_accuse_result():
-    logging.info('Received api_accuse_result Request: %s', request.args)
+    # logging.info('Received api_accuse_result Request: %s', request.args)
     accuse_results = messages.PlayerAccusationResult.from_dict(
-        dict(request.args))
+        request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', accuse_results)
     APP.accuse_results = accuse_results
     APP.next_action = Actions.WAIT
-    time.sleep(0.5)
     response = {'ack': True}
-    logging.info('Sending Response: %s', response)
+    # logging.info('Sending Response: %s', response)
     return jsonify(response)
 
 

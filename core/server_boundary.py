@@ -61,5 +61,5 @@ class Server(object):
         logging.info('Sending request to %s', url)
         logging.info('Contents: %s', request.to_dict())
         response = requests.get(url, params=request.to_dict())
-        logging.info('Response: %s', response.headers)
+        # logging.info('Response: %s', response.headers)
         return response.json()

@@ -66,6 +66,9 @@ class Game(object):
                      if card.name == card_name), None)
 
     def take_turn(self) -> str:
+        if not any(player.playing for player in self.players):
+            self.result = 'No one'
+            return
         if self.active_player.playing:
             # First send out a game update to all players
             self._broadcast_game_status()
@@ -126,8 +129,10 @@ class Game(object):
             return
 
         # Request a suggestion, given valid options
+        # Eliminate cards in your hand as valid options... since they cant be
         valid_cards = [card for card in self.cards
                        if card.type != CardType.ROOM] + [room_card]
+        logging.info('Valid Cards for Suggestion: %s', valid_cards)
         suggestion = self.active_client.send_suggestion_request(valid_cards)
 
         # If they didn't want to make a suggestion, exit
@@ -146,7 +151,7 @@ class Game(object):
         for turn in range(self.turn + 1, self.turn + len(self.players)):
             player_to_ask = self.players[turn % len(self.players)]
             for card in suggestion:
-                if card.name in player_to_ask.cards:
+                if card in player_to_ask.cards:
                     self._broadcast_suggestion_results(
                         suggestion, player_to_ask, card)
                     return
@@ -155,15 +160,15 @@ class Game(object):
         self._broadcast_suggestion_results(suggestion, None, None)
 
     def _player_accuse(self):
-        # TODO(ahammer): Remove the player's hand from the list of cards to accuse with
-        accusation = self.active_client.send_accusation_request(self.cards)
+        valid_cards = [card for card in self.cards]
+        accusation = self.active_client.send_accusation_request(valid_cards)
         logging.info('Accusation from %s: ', accusation)
         if accusation:
             if all(card in self.murder_deck for card in accusation):
                 logging.info('Accusation Correct! %s Wins!',
-                             self.active_player)
+                             self.active_player.name)
                 self._broadcast_accusation_results(True, accusation)
-                self.results = self.active_player.name
+                self.result = self.active_player.name
                 return
             logging.info('Accusation Incorrect! %s is OUT!',
                          self.active_player)
@@ -192,6 +197,8 @@ class Game(object):
         random.shuffle(weapons)
         random.shuffle(characters)
         random.shuffle(rooms)
+
+        # These are all cards, we'll keep the seperate from the deal
         self.cards = weapons + characters + rooms
 
         logging.info('Dealing out the Murder Deck...')
@@ -236,5 +243,6 @@ class Game(object):
         for name in player_names:
             start_room = self.board.get_room(
                 format_hallway_name(game_const.START_HALLWAY[name]))
-            players.append(Player(name=name, room=start_room))
+            players.append(Player(name=name, room=start_room, playing=True,
+                                  cards=[]))
         return players

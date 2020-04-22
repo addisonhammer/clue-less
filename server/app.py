@@ -69,12 +69,10 @@ class App(Flask):
 
 def end_game(future: Future):
     app, game_id = future.result()
-    winner = app.get_game(game_id).result
-    clients = app.get_game_clients(game_id)
-    for client in clients:
-        client.end_game_request(winner)
-        app.remove_client(client.client_id)
-    app.remove_game(game_id)
+    logging.info('Game Over: %s Wins!', app.get_game(game_id).result)
+    # for client in clients:
+    #     app.remove_client(client.client_id)
+    # app.remove_game(game_id)
 
 
 APP = App(__name__)
@@ -111,7 +109,7 @@ def debug_clear():
 @APP.route('/api/join_game', methods=['GET'])
 def join():
     # parse input params
-    logging.info('Received join request: %s', request.args)
+    # logging.info('Received join request: %s', request.args)
     join_request = JoinGameRequest.from_dict(dict(request.args))
     logging.info('Parsed Request: %s', join_request)
     src_ip = request.remote_addr
@@ -166,7 +164,7 @@ def start_game():
 
 @APP.route('/api/player_count', methods=['GET'])
 def player_count():
-    logging.info('Received player_count request: %s', request.args)
+    # logging.info('Received player_count request: %s', request.args)
     player_count_request = PlayerCountRequest.from_dict(dict(request.args))
     logging.info('Parsed request: %s', player_count_request)
     response = PlayerCountResponse(client_id=player_count_request.client_id,

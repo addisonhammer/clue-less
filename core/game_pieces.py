@@ -55,5 +55,5 @@ class Player(object):
     """Class representing a player in the Game."""
     name: str
     room: Room
-    playing: bool = True
-    cards: List[Card] = []
+    playing: bool
+    cards: List[Card]
