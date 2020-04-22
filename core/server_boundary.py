@@ -23,20 +23,21 @@ class Server(object):
         self._port = port
         self.client_id = ''
 
-    def send_join_request(self, player_name):
+    def send_join_request(self, player_name) -> JoinGameResponse:
         request = JoinGameRequest(player=player_name)
         response = self._post_request(route=JOIN_GAME_ROUTE, request=request)
         join_response = JoinGameResponse.from_dict(response)
         self.client_id = join_response.client_id
-        return join_response.client_id
+        return join_response
 
-    def send_start_game_request(self):
+    def send_start_game_request(self) -> StartGameResponse:
         request = StartGameRequest(client_id=self.client_id)
-        response = self._post_request(route=REQUEST_GAME_ROUTE, request=request)
+        response = self._post_request(
+            route=REQUEST_GAME_ROUTE, request=request)
         start_response = StartGameResponse.from_dict(response)
-        return start_response.game_id
+        return start_response
 
-    def send_player_count_request(self):
+    def send_player_count_request(self) -> int:
         request = PlayerCountRequest(self.client_id)
         response = self._post_request(
             route=PLAYER_COUNT_REQUEST_ROUTE, request=request)

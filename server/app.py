@@ -2,7 +2,7 @@ from concurrent.futures import Future, ThreadPoolExecutor
 import logging
 import os
 import time
-from typing import List
+from typing import List, Optional
 import uuid
 
 from flask import Flask, request, jsonify
@@ -13,12 +13,10 @@ from core.messages import JoinGameRequest, JoinGameResponse
 from core.messages import StartGameRequest, StartGameResponse
 from core.messages import PlayerCountRequest, PlayerCountResponse
 
-CLIENT_PORT = os.environ.get('CLIENT_PORT')
+CLIENT_PORT = 5000
 
 MIN_PLAYERS = 3
 MAX_PLAYERS = 6
-
-DEBUG = False
 
 
 class App(Flask):
@@ -32,6 +30,14 @@ class App(Flask):
     def waiting_clients(self) -> List[Client]:
         return [client for client in self.clients
                 if not client.game_id]
+
+    def get_client(self, client_id: str) -> Optional[Client]:
+        return next((client for client in self.clients
+                     if client.client_id == client_id), None)
+
+    def get_client_by_ip(self, ip: str) -> Optional[Client]:
+        return next((client for client in self.clients
+                     if client.address == ip), None)
 
     def get_game(self, game_id: str) -> Game:
         return next((game for game in self.games
@@ -81,12 +87,20 @@ def index():
 
 @APP.route('/debug/clients')
 def debug_clients():
-    return jsonify([client.__dict__ for client in APP.clients])
+    clients_list = [
+        {key: str(value) for key, value in client.__dict__.items()}
+        for client in APP.clients
+    ]
+    return jsonify(clients_list)
 
 
 @APP.route('/debug/games')
 def debug_games():
-    return jsonify([game.__dict__ for game in APP.games])
+    games_list = [
+        {key: str(value) for key, value in game.__dict__.items()}
+        for game in APP.games
+    ]
+    return jsonify(games_list)
 
 
 @APP.route('/debug/clear')
@@ -97,71 +111,72 @@ def debug_clear():
 @APP.route('/api/join_game', methods=['GET'])
 def join():
     # parse input params
-    join_request = JoinGameRequest.from_dict(request.args)
+    logging.info('Received join request: %s', request.args)
+    join_request = JoinGameRequest.from_dict(dict(request.args))
+    logging.info('Parsed Request: %s', join_request)
     src_ip = request.remote_addr
-    existing = [client for client in APP.clients
-                if client.address == src_ip]
+    existing = APP.get_client_by_ip(src_ip)
 
-    if existing and not DEBUG:
-        return jsonify(JoinGameResponse(existing[0].client_id, player='').to_dict())
+    if existing:
+        logging.info('Client already exists for this IP. ')
+        response = JoinGameResponse(client_id=existing.client_id,
+                                    player=existing.player_name)
+        return jsonify(response.to_dict())
 
     player = join_request.player
-    new_client = Client(player,
-                        src_ip,
-                        CLIENT_PORT)
+    # TODO(ahammer): Check this character against existing client's characters
+    new_client = Client(player, src_ip, CLIENT_PORT)
     APP.clients.append(new_client)
+    logging.info('Added a new client: %s', new_client.__dict__)
 
-    # get player count without a running game
-    player_count = len(APP.waiting_clients)
-    return jsonify(
-        JoinGameResponse(player=player,
-                         client_id=new_client.client_id).to_dict())
+    response = JoinGameResponse(player=player,
+                                client_id=new_client.client_id)
+    logging.info('Response to client: %s', response)
+    return jsonify(response.to_dict())
 
 
 @APP.route('/api/request_game', methods=['GET'])
 def request_game():
-    start_request = StartGameRequest.from_dict(request.args)
+    start_request = StartGameRequest.from_dict(dict(request.args))
 
     player_count = len(APP.waiting_clients)
     if player_count < MIN_PLAYERS:
-        response = StartGameResponse(game_id='')
+        response = StartGameResponse(client_id=start_request.client_id,
+                                     game_id='')
         return jsonify(response.to_dict())
 
     if player_count > MAX_PLAYERS:
-        game_clients = APP.waiting_clients[:MAX_PLAYERS - 1]
-
-    game_clients = APP.waiting_clients
+        game_clients = APP.waiting_clients[:MAX_PLAYERS - 2]
+        game_clients.append(APP.get_client(start_request.client_id))
+    else:
+        game_clients = APP.waiting_clients
     game = Game(game_clients)
+    APP.games.append(game)
+    APP.start_game(game.game_id)
 
-    response = StartGameResponse(game_id=game.game_id)
+    response = StartGameResponse(client_id=start_request.client_id,
+                                 game_id=game.game_id)
     return jsonify(response.to_dict())
 
 
 @APP.route('/api/start_game', methods=['GET'])
 def start_game():
-    game_clients = APP.waiting_clients
-    game = Game(game_clients)
-    APP.games.append(game)
-    result = APP.start_game(game.game_id)
-
-    return result
+    return 'NotImplemented'
 
 
 @APP.route('/api/player_count', methods=['GET'])
 def player_count():
-    player_count_request = PlayerCountRequest.from_dict(request.args)
-    return PlayerCountResponse(count=len(APP.waiting_clients))
+    logging.info('Received player_count request: %s', request.args)
+    player_count_request = PlayerCountRequest.from_dict(dict(request.args))
+    logging.info('Parsed request: %s', player_count_request)
+    response = PlayerCountResponse(client_id=player_count_request.client_id,
+                                   count=len(APP.waiting_clients))
+    return jsonify(response.to_dict())
 
 
 # Define all @APP.routes above this line.
-
-
-def main():
-    APP.config['PROPAGATE_EXCEPTIONS'] = True
-    APP.secret_key == u'yolo'
-    APP.run(host='0.0.0.0')
-
-
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    main()
+    APP.config['PROPAGATE_EXCEPTIONS'] = True
+    APP.secret_key == u'yolo'
+    APP.run(debug=True, host='0.0.0.0')

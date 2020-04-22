@@ -13,7 +13,7 @@ services:
       DB_NAME: postgres
       DB_USER: postgres
       DB_PASSWORD: example
-      CLIENT_PORT: 80
+      CLIENT_PORT: 5000
     volumes:
       - ./server:/server
       - ./core:/core

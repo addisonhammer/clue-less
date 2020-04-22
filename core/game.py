@@ -70,6 +70,7 @@ class Game(object):
             # First send out a game update to all players
             self._broadcast_game_status()
             # Next start the MOVE phase of the turn
+            logging.info('It is %s''s turn to go!', self.active_player.name)
             self._player_move()
             # Next start the SUGGEST phased of the turn
             self._player_suggest()
@@ -80,8 +81,6 @@ class Game(object):
 
     def _broadcast_game_status(self) -> None:
         for client in self.clients:
-            logging.info('Sending Game Status update to %s',
-                         client.player_name)
             client.send_game_state(self.players, self.active_player)
 
     def _broadcast_suggestion_results(self, suggestion: List[Card] = [],
@@ -103,7 +102,6 @@ class Game(object):
         valid_rooms = [
             room for room in adjacent_rooms
             if self._is_valid_move(room)] + [current_room]
-
         new_room = self.active_client.send_move_request(valid_rooms)
         if new_room:
             self.active_player.room = new_room
@@ -122,6 +120,8 @@ class Game(object):
         # You can only suggest based on the room you are in
         room_card = self.get_card(self.active_player.room.name)
         if not room_card:
+            logging.info('%s cant make a Suggetion, not in a Room!',
+                         self.active_player.name)
             self._broadcast_suggestion_results()
             return
 
@@ -157,12 +157,21 @@ class Game(object):
     def _player_accuse(self):
         # TODO(ahammer): Remove the player's hand from the list of cards to accuse with
         accusation = self.active_client.send_accusation_request(self.cards)
-        if all(card in self.murder_deck for card in accusation):
-            self._broadcast_accusation_results(True, accusation)
-            self.results = self.active_player.name
+        logging.info('Accusation from %s: ', accusation)
+        if accusation:
+            if all(card in self.murder_deck for card in accusation):
+                logging.info('Accusation Correct! %s Wins!',
+                             self.active_player)
+                self._broadcast_accusation_results(True, accusation)
+                self.results = self.active_player.name
+                return
+            logging.info('Accusation Incorrect! %s is OUT!',
+                         self.active_player)
+            self._broadcast_accusation_results(False, accusation)
+            self.active_player.playing = False
             return
+        logging.info('%s made no suggestion.', self.active_player)
         self._broadcast_accusation_results(False, accusation)
-        self.active_player.playing = False
 
     def _deal_cards(self):
         """Deals out the cards in the deck to start the game.
@@ -173,6 +182,7 @@ class Game(object):
         """
 
         # First Initialize the cards from constants)
+        logging.info('Shuffling the deck...')
         weapons = [Card(name, CardType.WEAPON) for name in game_const.WEAPONS]
         characters = [Card(name, CardType.CHARACTER)
                       for name in game_const.CHARACTERS]
@@ -183,9 +193,12 @@ class Game(object):
         random.shuffle(characters)
         random.shuffle(rooms)
         self.cards = weapons + characters + rooms
+
+        logging.info('Dealing out the Murder Deck...')
         self.murder_deck = [weapons.pop(), characters.pop(), rooms.pop()]
 
         # Put the remaining cards in a deck, shuffle, and deal to players
+        logging.info('Dealing the cards to Players...')
         remaining_cards = weapons + characters + rooms
         random.shuffle(remaining_cards)
         while len(remaining_cards) > 0:
@@ -202,6 +215,7 @@ class Game(object):
             [Room(name=format_hallway_name(hallway), type=RoomType.HALLWAY)
              for hallway in game_const.HALLWAYS])
 
+        logging.info('Setting up the game Board...')
         # Then use the static adjacency graph to generate a Board and return it
         board = Board(rooms=rooms)
         for room in game_const.ROOMS:
@@ -218,6 +232,7 @@ class Game(object):
         """Initializes the players in the Game."""
         players = []
         # TODO(ahammer): Do literally ANY error handling here
+        logging.info('Setting up players on the board...')
         for name in player_names:
             start_room = self.board.get_room(
                 format_hallway_name(game_const.START_HALLWAY[name]))

@@ -20,7 +20,7 @@ class Message(object):
 class PlayerSuggestionRequest(Message):
     """This is a Server request for a client to make a Suggestion"""
     game_id: str
-    player: str
+    client_id: str
     suspects: str
     weapons: str
     rooms: str
@@ -30,7 +30,7 @@ class PlayerSuggestionRequest(Message):
 class PlayerSuggestionResponse(Message):
     """This is a Client response containing the Suggestion."""
     game_id: str
-    player: str
+    client_id: str
     suspect: str = ''
     weapon: str = ''
     room: str = ''
@@ -40,7 +40,7 @@ class PlayerSuggestionResponse(Message):
 class PlayerSuggestionResult(Message):
     """Contains the results of the Suggestion, for the Client"""
     game_id: str
-    player: str
+    client_id: str
     suspect: str = ''
     weapon: str = ''
     room: str = ''
@@ -52,7 +52,7 @@ class PlayerSuggestionResult(Message):
 class PlayerAccusationRequest(Message):
     """This is a game-ending accusation, identical to a suggestion."""
     game_id: str
-    player: str
+    client_id: str
     suspects: List[str]
     weapons: List[str]
     rooms: List[str]
@@ -62,7 +62,7 @@ class PlayerAccusationRequest(Message):
 class PlayerAccusationResponse(Message):
     """This is a game-ending accusation, identical to a suggestion."""
     game_id: str
-    player: str
+    client_id: str
     suspect: str = ''
     weapon: str = ''
     room: str = ''
@@ -72,7 +72,7 @@ class PlayerAccusationResponse(Message):
 class PlayerAccusationResult(Message):
     """Contains the results of the Accusation, for the Client"""
     game_id: str
-    player: str
+    client_id: str
     correct: bool
     suspect: str
     weapon: str
@@ -83,7 +83,7 @@ class PlayerAccusationResult(Message):
 class PlayerMoveRequest(Message):
     """This is a server's request to a client for a PlayerMove."""
     game_id: str
-    player: str
+    client_id: str
     move_options: List[str]
 
 
@@ -91,7 +91,7 @@ class PlayerMoveRequest(Message):
 class PlayerMoveResponse(Message):
     """This is a client's response to a PlayerMoveRequest."""
     game_id: str
-    player: str
+    client_id: str
     move: str = ''
 
 
@@ -99,17 +99,17 @@ class PlayerMoveResponse(Message):
 class GameStateRequest(Message):
     """This is the servers broadcast of game state to all clients."""
     game_id: str
-    player: str
+    client_id: str
     whereabouts: Dict[str, str]  # The Room.name (location) of each Player.name
     current_turn: str  # The Player.name of the current turn
 
 
-@attr.s(auto_attribs=True, slots=True)
-class GameStateResponse(Message):
-    """This is the client response indicating they are still connected."""
-    game_id: str
-    player: str
-    connected: bool
+# @attr.s(auto_attribs=True, slots=True)
+# class GameStateResponse(Message):
+#     """This is the client response indicating they are still connected."""
+#     game_id: str
+#     player: str
+#     connected: bool
 
 
 @attr.s(auto_attribs=True, slots=True)
@@ -134,6 +134,7 @@ class StartGameRequest(Message):
 @attr.s(auto_attribs=True, slots=True)
 class StartGameResponse(Message):
     """This is the response to the client asking to start the game"""
+    client_id: str
     game_id: str
 
 

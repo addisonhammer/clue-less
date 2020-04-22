@@ -5,7 +5,7 @@ import uuid
 import requests
 
 from core.game_pieces import Player, Card, CardType, Room, Board
-from core.messages import GameStateRequest, GameStateResponse
+from core.messages import GameStateRequest
 from core.messages import PlayerMoveRequest, PlayerMoveResponse
 from core.messages import PlayerSuggestionRequest, PlayerSuggestionResponse, PlayerSuggestionResult
 from core.messages import PlayerAccusationRequest, PlayerAccusationResponse, PlayerAccusationResult
@@ -15,31 +15,9 @@ ACK = 'ack'
 GAME_STATE_ROUTE = 'api/game_state'
 PLAYER_MOVE_ROUTE = 'api/player_move'
 SUGGESTION_ROUTE = 'api/suggest'
-SUGGESTION_RESULT_ROUTE = 'api/suggest/result'
+SUGGESTION_RESULT_ROUTE = 'api/suggest_result'
 ACCUSATION_ROUTE = 'api/accuse'
-ACCUSATION_ROUTE = 'api/accuse_result'
-
-DEBUG = False  # Using mocky.io endpoints for testing
-DEBUG_ACK_ROUTE = 'v2/5e9e680f34000099b46eec98'
-DEBUG_PLAYER_MOVE_ROUTE = 'v2/5e9e684334000037b56eec9a'
-DEBUG_SUGGESTION_ROUTE = 'v2/5e9e686e34000083b56eec9b'
-
-
-def _set_up_debug():
-    global DEBUG
-    DEBUG = True
-    global GAME_STATE_ROUTE
-    GAME_STATE_ROUTE = DEBUG_ACK_ROUTE
-    global PLAYER_MOVE_ROUTE
-    PLAYER_MOVE_ROUTE = DEBUG_PLAYER_MOVE_ROUTE
-    global SUGGESTION_ROUTE
-    SUGGESTION_ROUTE = DEBUG_SUGGESTION_ROUTE
-    global SUGGESTION_RESULT_ROUTE
-    SUGGESTION_RESULT_ROUTE = DEBUG_ACK_ROUTE
-    global ACCUSATION_ROUTE
-    ACCUSATION_ROUTE = DEBUG_SUGGESTION_ROUTE
-    global ACCUSATION_RESULT_ROUTE
-    ACCUSATION_RESULT_ROUTE = DEBUG_ACK_ROUTE
+ACCUSATION_RESULT_ROUTE = 'api/accuse_result'
 
 
 def _sort_cards(cards: List[Card]) -> Tuple[List[str], List[str], List[str]]:
@@ -62,16 +40,17 @@ class Client(object):
                  game_id: str = ''):
         self.player_name = player_name
         self.game_id = game_id
-        self.address = address if not DEBUG else 'www.mocky.io'
+        self.address = address
         self._port = port
         self.client_id = str(uuid.uuid4())
 
     def send_game_state(self, players: List[Player],
                         active_player: Player) -> bool:
+        logging.info('Sending Game State to %s', self.player_name)
         whereabouts = {player.name: player.room.name for player in players}
         current_turn = active_player.name
         request = GameStateRequest(game_id=self.game_id,
-                                   player=self.player_name,
+                                   client_id=self.client_id,
                                    whereabouts=whereabouts,
                                    current_turn=current_turn)
         response = self._post_request(
@@ -79,9 +58,10 @@ class Client(object):
         return response[ACK]
 
     def send_move_request(self, valid_moves: List[Room]) -> Optional[Room]:
+        logging.info('Sending Move Request to %s', self.player_name)
         request = PlayerMoveRequest(
             game_id=self.game_id,
-            player=self.player_name,
+            client_id=self.client_id,
             move_options=[room.name for room in valid_moves]
         )
         response = self._post_request(route=PLAYER_MOVE_ROUTE, request=request)
@@ -91,9 +71,10 @@ class Client(object):
         return move_room
 
     def send_suggestion_request(self, cards: List[Card]) -> List[Card]:
+        logging.info('Sending Suggestion Request to %s', self.player_name)
         suspect_cards, weapon_cards, room_cards = _sort_cards(cards)
         request = PlayerSuggestionRequest(game_id=self.game_id,
-                                          player=self.player_name,
+                                          client_id=self.client_id,
                                           suspects=suspect_cards,
                                           weapons=weapon_cards,
                                           rooms=room_cards)
@@ -108,10 +89,11 @@ class Client(object):
     def send_suggestion_result(self, suggestion: List[Card],
                                disproved_by: Optional[Player],
                                disproved_card: Optional[Card]):
+        logging.info('Sending Suggestion Results to %s', self.player_name)
         suspect_cards, weapon_cards, room_cards = _sort_cards(suggestion)
         request = PlayerSuggestionResult(
             game_id=self.game_id,
-            player=self.player_name,
+            client_id=self.client_id,
             suspect=next(iter(suspect_cards), ''),
             weapon=next(iter(weapon_cards), ''),
             room=next(iter(room_cards), ''))
@@ -122,7 +104,7 @@ class Client(object):
             return response[ACK]
 
         request = PlayerSuggestionResult(game_id=self.game_id,
-                                         player=self.player_name,
+                                         client_id=self.client_id,
                                          disproved_by=disproved_by.name,
                                          disproved_card=disproved_card.name)
         response = self._post_request(route=SUGGESTION_RESULT_ROUTE,
@@ -130,10 +112,11 @@ class Client(object):
         return response[ACK]
 
     def send_accusation_request(self, cards: List[Card]) -> List[Card]:
+        logging.info('Sending Accusation Request to %s', self.player_name)
         suspect_cards, weapon_cards, room_cards = _sort_cards(cards)
         request = PlayerAccusationRequest(
             game_id=self.game_id,
-            player=self.player_name,
+            client_id=self.client_id,
             suspects=next(iter(suspect_cards), ''),
             weapons=next(iter(weapon_cards), ''),
             rooms=next(iter(room_cards), ''))
@@ -149,13 +132,14 @@ class Client(object):
 
     def send_accusation_result(self, correct: bool,
                                murder_deck: List[Card]) -> bool:
+        logging.info('Sending Accusation Results to %s', self.player_name)
         suspect_cards, weapon_cards, room_cards = _sort_cards(murder_deck)
         request = PlayerAccusationResult(game_id=self.game_id,
-                                         player=self.player_name,
+                                         client_id=self.client_id,
                                          correct=correct,
-                                         suspect=next(iter(suspect_cards)),
-                                         weapon=next(iter(weapon_cards)),
-                                         room=next(iter(room_cards)))
+                                         suspect=next(iter(suspect_cards), ''),
+                                         weapon=next(iter(weapon_cards), ''),
+                                         room=next(iter(room_cards), ''))
         response = self._post_request(route=ACCUSATION_RESULT_ROUTE,
                                       request=request)
         return response[ACK]
@@ -167,7 +151,7 @@ class Client(object):
         # TODO(ahammer): Add a timeout here and declare the client disconnected
         # TODO(ahammer): Do literally ANY error handling here
         logging.info('Sending request to %s', url)
-        logging.info('Contents: %s', request.to_dict)
+        logging.info('Contents: %s', request.to_dict())
         response = requests.get(url, params=request.to_dict())
-        logging.info('Response: %s', response.headers)
+        logging.info('Response: %s', response.__dict__)
         return response.json()
