@@ -45,7 +45,7 @@ class Server(object):
 
     def send_player_count_update(self, count):
         # this is for sending a player count update to the client
-        request = PlayerCountUpdateRequest(self.client_id, count=count)
+        request = PlayerCountUpdateRequest(self.client_id)
         response = self._post_request(
             route=PLAYER_COUNT_UPDATE_ROUTE, request=request)
         count_response = PlayerCountUpdateResponse.from_dict(response)

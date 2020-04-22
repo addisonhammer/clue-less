@@ -104,8 +104,7 @@ def join():
                 if client.address == src_ip]
 
     if existing and not DEBUG:
-        return jsonify(JoinGameResponse(existing[0].client_id,
-                                        accepted=False).to_dict())
+        return jsonify(JoinGameResponse(existing[0].client_id, player='').to_dict())
 
     player = join_request.player
     new_client = Client(player,
@@ -117,9 +116,7 @@ def join():
     player_count = len(APP.waiting_clients)
     return jsonify(
         JoinGameResponse(player=player,
-                         client_id=new_client.client_id,
-                         accepted=True,
-                         player_count=player_count).to_dict())
+                         client_id=new_client.client_id).to_dict())
 
 
 @APP.route('/api/start_game', methods=['GET'])
@@ -128,11 +125,7 @@ def start_game():
 
     player_count = len(APP.waiting_clients)
     if player_count < MIN_PLAYERS:
-        response = StartGameResponse(
-            player=start_request.player,
-            game_id='',
-            accepted=False,
-            player_count=player_count)
+        response = StartGameResponse(game_id='')
         return jsonify(response.to_dict())
 
     if player_count > MAX_PLAYERS:
@@ -143,18 +136,14 @@ def start_game():
     APP.games.append(game)
     result = APP.start_game(game.game_id)
 
-    response = StartGameResponse(player=start_request.player[0],
-                                 game_id=game.game_id,
-                                 accepted=result,
-                                 player_count=player_count)
+    response = StartGameResponse(game_id=game.game_id)
     return jsonify(response.to_dict())
 
 
 @APP.route('/api/player_count', methods=['GET'])
 def player_count():
     player_count_request = PlayerCountRequest.from_dict(request.args)
-    return PlayerCountResponse(player=player_count_request.player,
-                               count=len(APP.waiting_clients))
+    return PlayerCountResponse(count=len(APP.waiting_clients))
 
 
 # Define all @APP.routes above this line.
