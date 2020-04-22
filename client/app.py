@@ -23,6 +23,9 @@ class App(Flask):
     client_ids = []
     game_ids = []
     characters = []
+    suspect_suggest = ''
+    weapon_suggest = ''
+    room_suggest = ''
     #  Add more attributes you need to access globally
 
 
@@ -66,28 +69,18 @@ def queue(client_id):
 @APP.route('/game/<game_id>/<client_id>/suggest', methods=['GET', 'POST'])
 def game(game_id, client_id):
     logging.info('Game %s has started', game_id)
-
-    # POST request for accusation
+    global suspect_suggest
+    global weapon_suggest
+    global room_suggest
+    # POST request for suggestion
     if request.method == 'POST':
         form_results = request.form
         logging.info("Sending suggestion request data: %s", form_results)
-
-        return render_template('result.html.jinja',
-                               suspect=form_results.get("suspect"),
-                               weapon=form_results.get("weapon"),
-                               room=form_results.get("room"),
-                               result=False)
-
-        # suggestion = messages.PlayerSuggestionRequest(
-        #     game_id=game_id,
-        #     player=client_id,
-        #     suspects=form_results.get("suspects"),
-        #     weapons=form_results.get("weapons"),
-        #     rooms=form_results.get("room")
-        # )
-        #
-        # response = APP.client.send_suggestion_request(suggestion)
-        # logging.info("Suggestion data: %s", response)
+        suspect_suggest = form_results.get("suspect")
+        weapon_suggest = form_results.get("weapon")
+        room_suggest = form_results.get("room")
+        # i am unable to send form_results to new page because flask so have to make them global
+        return redirect(url_for('result', game_id=game_id, client_id=client_id))
 
     return render_template('suggestion.html.jinja',
                            client_ids=App.client_ids,
@@ -97,6 +90,50 @@ def game(game_id, client_id):
                            weapons=list(game_const.WEAPONS),
                            rooms=list(game_const.ROOMS))
 
+@APP.route('/result/<game_id>/<client_id>', methods=['GET', 'POST'])
+def result(game_id, client_id):
+    logging.info("Suggestion result: %s", "Incorrect")
+    # POST request for accusation
+    if request.method == 'POST':
+        if request.form['button'] == 'Make an Accusation':
+            return redirect(url_for('accuse', game_id=game_id, client_id=client_id))
+        else:
+            return redirect(url_for('move', game_id=game_id, client_id=client_id))
+
+    return render_template('result.html.jinja',
+                           suspect=suspect_suggest,
+                           weapon=weapon_suggest,
+                           room=room_suggest,
+                           result=False)
+
+@APP.route('/accuse/<game_id>/<client_id>', methods=['GET', 'POST'])
+def accuse(game_id, client_id):
+    # POST request for accusation
+    if request.method == 'POST':
+        form_results = request.form
+        logging.info("Sending accusation request data: %s", form_results)
+        logging.info("Accusation result: %s", "Incorrect")
+        return 'Your accusation was incorrect. Game over.'
+
+    return render_template('accusation.html.jinja',
+                           client_ids=App.client_ids,
+                           game_ids=App.game_ids,
+                           characters=App.characters,
+                           names=list(game_const.CHARACTERS),
+                           weapons=list(game_const.WEAPONS),
+                           rooms=list(game_const.ROOMS))
+
+
+@APP.route('/move/<game_id>/<client_id>', methods=['GET', 'POST'])
+def move(game_id, client_id):
+    if request.method == 'POST':
+        form_results = request.form
+        logging.info("Sending move request data: %s", form_results)
+        logging.info("Move result: %s", "Succesful")
+        return 'You have successfully moved.'
+
+    return render_template('room.html.jinja',
+                            rooms=['Billiard', 'Lounge'])
 
 @APP.route('/api/player_move', methods=['GET'])
 def player_move():
