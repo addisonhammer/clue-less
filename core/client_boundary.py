@@ -47,8 +47,12 @@ class Client(object):
     def send_game_state(self, players: List[Player],
                         active_player: Player) -> bool:
         logging.info('Sending Game State to %s', self.player_name)
-        whereabouts = {player.name: player.room.name for player in players}
-        player_cards = [card.name for card in active_player.cards]
+        whereabouts = [
+            f'{player.name}@{player.room.name}' for player in players
+        ]
+        player = [player for player in players if player.name ==
+                  self.player_name][0]
+        player_cards = [card.name for card in player.cards]
         current_turn = active_player.name
         request = GameStateRequest(game_id=self.game_id,
                                    client_id=self.client_id,
