@@ -1,0 +1,13 @@
+<!doctype html>
+<div style="text-align:center">
+<title>Clue-Less</title>
+<h1>PAUSED = {{paused}}</h1>
+    <form name=start_game-form id=start_game-form class="form-inline" method="POST">
+    {% if paused %}
+        <input type="submit" name="resume" value="Resume Game">
+    {% else %}
+        <input type="submit" name="pause" value="Pause Game">
+    {% endif %}
+        <input type="submit" name="kill" value="Kill Game">
+    </form>
+</div>

@@ -11,6 +11,7 @@ from flask import Flask, request, render_template, jsonify, redirect, url_for
 from core.messages import PlayerMoveRequest, PlayerMoveResponse
 from core.server_boundary import Server
 
+from core.game import GameEncoder
 from core import game_const
 from core import messages
 
@@ -25,18 +26,8 @@ class Actions(Enum):
     ACCUSE = 3  # Client should display Accusation Page
 
 
-class App(Flask):
+class AppData(object):
     server = Server(SERVER_IP, SERVER_PORT)
-    # client = Client()
-    player_name: str = ''
-    character: str = ''
-    client_ids = []
-    game_ids = []
-    characters = []
-    suspect_suggest = ''
-    weapon_suggest = ''
-    room_suggest = ''
-
     next_action: Actions = Actions.WAIT
     game_state: messages.GameStateRequest = None
     move_request: messages.PlayerMoveRequest = None
@@ -48,7 +39,23 @@ class App(Flask):
     client_id: str = ''
     seen_cards: List[str] = []
     player_deck: List[str] = []
+
+
+class App(Flask):
+    app_data: AppData = AppData()
     #  Add more attributes you need to access globally
+    player_name: str = ''
+    character: str = ''
+    client_ids = []
+    game_ids = []
+    characters = []
+    suspect_suggest = ''
+    weapon_suggest = ''
+    room_suggest = ''
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.json_encoder = GameEncoder
 
     def strategize_options(self, all_weapons: List[str], all_suspects: List[str],
                            all_rooms: List[str]):
@@ -57,11 +64,11 @@ class App(Flask):
         # logging.info('Seen Cards: %s', self.seen_cards)
 
         weapons = [weapon for weapon in all_weapons
-                   if weapon not in (self.player_deck + self.seen_cards)]
+                   if weapon not in (self.app_data.player_deck + self.app_data.seen_cards)]
         suspects = [suspect for suspect in all_suspects
-                    if suspect not in (self.player_deck + self.seen_cards)]
+                    if suspect not in (self.app_data.player_deck + self.app_data.seen_cards)]
         rooms = [room for room in all_rooms
-                 if room not in (self.player_deck + self.seen_cards)]
+                 if room not in (self.app_data.player_deck + self.app_data.seen_cards)]
 
         if not weapons:
             weapons = all_weapons
@@ -77,7 +84,9 @@ APP = App(__name__)
 
 @APP.route('/debug/app', methods=(['GET']))
 def debug_app():
-    app_dict = {key: str(value) for key, value in APP.__dict__.items()}
+    app_dict = APP.app_data.__dict__.copy()
+    if APP.app_data.seen_cards:
+        app_dict.update(seen_cards=APP.app_data.seen_cards)
     return jsonify(app_dict)
 
 
@@ -87,14 +96,15 @@ def join_game():
         character_selection = request.form.get('character')
         logging.info('Selected character: %s', character_selection)
         if character_selection:
-            join_response = APP.server.send_join_request(character_selection)
+            join_response = APP.app_data.server.send_join_request(
+                character_selection)
             logging.info("Client ID: %s", join_response.client_id)
             APP.characters.append(join_response.player)
             APP.client_ids.append(join_response.client_id)
 
-            APP.client_id = join_response.client_id
-            APP.player_name = join_response.player
-        return redirect(url_for('queue', client_id=APP.client_id))
+            APP.app_data.client_id = join_response.client_id
+            APP.app_data.player_name = join_response.player
+        return redirect(url_for('queue', client_id=APP.app_data.client_id))
 
     return render_template('home.html.jinja',
                            characters=list(game_const.CHARACTERS))
@@ -106,7 +116,7 @@ def queue(client_id):
     if request.method == 'POST':
         if "start_game" in request.form:
             logging.info('Client %s request to start the game', client_id)
-            game_id = APP.server.send_start_game_request()
+            game_id = APP.app_data.server.send_start_game_request()
             if not game_id:
                 return 'Please wait while we find an available game server for you.'
             else:
@@ -135,9 +145,9 @@ def game(game_id, client_id):
         return redirect(url_for('result', game_id=game_id, client_id=client_id))
 
     return render_template('suggestion.html.jinja',
-                           client_ids=App.client_ids,
-                           game_ids=App.game_ids,
-                           characters=App.characters,
+                           client_ids=APP.client_ids,
+                           game_ids=APP.game_ids,
+                           characters=APP.characters,
                            names=list(game_const.CHARACTERS),
                            weapons=list(game_const.WEAPONS),
                            rooms=list(game_const.ROOMS))
@@ -170,9 +180,9 @@ def accuse(game_id, client_id):
         return 'Your accusation was incorrect. Game over.'
 
     return render_template('accusation.html.jinja',
-                           client_ids=App.client_ids,
-                           game_ids=App.game_ids,
-                           characters=App.characters,
+                           client_ids=APP.client_ids,
+                           game_ids=APP.game_ids,
+                           characters=APP.characters,
                            names=list(game_const.CHARACTERS),
                            weapons=list(game_const.WEAPONS),
                            rooms=list(game_const.ROOMS))
@@ -192,13 +202,14 @@ def move(game_id, client_id):
 
 @APP.route('/api/game_state', methods=['GET'])
 def api_game_state():
-    # logging.info('Received api_game_state Request: %s', request.args)
+    logging.info('Received api_game_state Request: %s',
+                 request.args)
     game_state = messages.GameStateRequest.from_dict(
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', game_state)
-    APP.game_state = game_state
-    APP.player_deck = game_state.player_cards
-    APP.game_id = game_state.game_id[0]
+    APP.app_data.game_state = game_state
+    APP.app_data.player_deck = game_state.player_cards
+    APP.app_data.game_id = game_state.game_id[0]
     APP.next_action = Actions.WAIT
     response = {'ack': True}
     # logging.info('Sending Response: %s', response)
@@ -213,10 +224,10 @@ def api_player_move():
     logging.info('Parsed Request: %s', move_request)
     APP.move_request = move_request
     APP.next_action = Actions.MOVE
-    time.sleep(0.5)
+    time.sleep(2)
     move_selection = random.choice(move_request.move_options)
-    response = messages.PlayerMoveResponse(game_id=APP.game_id,
-                                           client_id=APP.client_id,
+    response = messages.PlayerMoveResponse(game_id=APP.app_data.game_id,
+                                           client_id=APP.app_data.client_id,
                                            move=move_selection)
 
     logging.info('Sending Response: %s', response)
@@ -229,9 +240,9 @@ def api_suggest():
     suggest_request = messages.PlayerSuggestionRequest.from_dict(
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', suggest_request)
-    APP.suggest_request = suggest_request
+    APP.app_data.suggest_request = suggest_request
     APP.next_action = Actions.SUGGEST
-    time.sleep(0.5)
+    time.sleep(2)
     weapons, suspects, rooms = APP.strategize_options(suggest_request.weapons,
                                                       suggest_request.suspects,
                                                       suggest_request.rooms)
@@ -240,8 +251,8 @@ def api_suggest():
     room = random.choice(rooms)
     weapon = random.choice(weapons)
     suspect = random.choice(suspects)
-    response = messages.PlayerSuggestionResponse(game_id=APP.game_id,
-                                                 client_id=APP.client_id,
+    response = messages.PlayerSuggestionResponse(game_id=APP.app_data.game_id,
+                                                 client_id=APP.app_data.client_id,
                                                  room=room,
                                                  suspect=suspect,
                                                  weapon=weapon)
@@ -255,8 +266,11 @@ def api_suggest_result():
     suggest_results = messages.PlayerSuggestionResult.from_dict(
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', suggest_results)
-    APP.suggest_results = suggest_results
-    APP.seen_cards.append(suggest_results.disproved_card[0])
+    APP.app_data.suggest_results = suggest_results
+    logging.info('test')
+    if suggest_results.disproved_card[0]:
+        APP.app_data.seen_cards.append(suggest_results.disproved_card[0])
+    logging.info(APP.app_data.seen_cards)
     APP.next_action = Actions.WAIT
     response = {'ack': True}
     # logging.info('Sending Response: %s', response)
@@ -271,7 +285,7 @@ def api_accuse():
     logging.info('Parsed Request: %s', accuse_request)
     APP.accuse_request = accuse_request
     APP.next_action = Actions.ACCUSE
-    time.sleep(0.5)
+    time.sleep(2)
     weapons, suspects, rooms = APP.strategize_options(accuse_request.weapons,
                                                       accuse_request.suspects,
                                                       accuse_request.rooms)
@@ -290,8 +304,8 @@ def api_accuse():
         weapon = ''
         suspect = ''
 
-    response = messages.PlayerAccusationResponse(game_id=APP.game_id,
-                                                 client_id=APP.client_id,
+    response = messages.PlayerAccusationResponse(game_id=APP.app_data.game_id,
+                                                 client_id=APP.app_data.client_id,
                                                  room=room,
                                                  weapon=weapon,
                                                  suspect=suspect)

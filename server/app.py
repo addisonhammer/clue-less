@@ -2,13 +2,15 @@ from concurrent.futures import Future, ThreadPoolExecutor
 import logging
 import os
 import time
+from threading import Lock
 from typing import List, Optional
 import uuid
 
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
+import attr
 
 from core.client_boundary import Client
-from core.game import Game
+from core.game import Game, GameEncoder
 from core.messages import JoinGameRequest, JoinGameResponse
 from core.messages import StartGameRequest, StartGameResponse
 from core.messages import PlayerCountRequest, PlayerCountResponse
@@ -25,6 +27,13 @@ class App(Flask):
     games: List[Game] = []
     futures: List[Future] = []
     executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=5)
+    lock: Lock = Lock()
+    paused: bool = False
+    kill: bool = False
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.json_encoder = GameEncoder
 
     @property
     def waiting_clients(self) -> List[Client]:
@@ -61,9 +70,12 @@ class App(Flask):
         # Wait a second for startup
         time.sleep(1)
         while not game_result:
-            game.take_turn()
-            game_result = game.result
-            time.sleep(0.1)  # Give other threads a chance
+            time.sleep(1)  # Give other threads a chance
+            with self.lock:
+                game.take_turn()
+                game_result = game.result
+            if self.kill == True:
+                return self, game.game_id
         return self, game.game_id
 
 
@@ -85,20 +97,31 @@ def index():
 
 @APP.route('/debug/clients')
 def debug_clients():
-    clients_list = [
-        {key: str(value) for key, value in client.__dict__.items()}
-        for client in APP.clients
-    ]
-    return jsonify(clients_list)
+    return jsonify(APP.clients)
 
 
 @APP.route('/debug/games')
 def debug_games():
-    games_list = [
-        {key: str(value) for key, value in game.__dict__.items()}
-        for game in APP.games
-    ]
-    return jsonify(games_list)
+    return jsonify(APP.games)
+
+
+@APP.route('/debug/pause', methods=['POST', 'GET'])
+def debug_pause():
+    if request.method == 'POST':
+        logging.info(request.form)
+        if request.form.get('pause'):
+            APP.paused = True
+            APP.lock.acquire()
+        if request.form.get('resume'):
+            APP.paused = False
+            APP.lock.release()
+        if request.form.get('kill'):
+            APP.kill = True
+            if APP.lock.locked():
+                APP.lock.release()
+            APP.paused = False
+            APP.kill = False
+    return render_template('pause.html.jinja', paused=APP.paused)
 
 
 @APP.route('/debug/clear')

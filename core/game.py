@@ -1,16 +1,32 @@
 from typing import List, Tuple, Dict, Optional
 from enum import Enum
+from json import JSONEncoder
 import random
 import logging
 import uuid
 
+import attr
 import networkx as nx
 
 from core.client_boundary import Client
 from core import game_const
+from core.messages import Message
 from core.game_pieces import CardType, Card, RoomType, Room, Board, Player
 
 # Module-level helper functions
+
+
+class GameEncoder(JSONEncoder):
+    def default(self, obj):  # pylint: disable=E0202
+        if isinstance(obj, (CardType, RoomType)):
+            return str(obj)
+        if isinstance(obj, (Card, Player, Room, Message)):
+            return attr.asdict(obj)
+        if isinstance(obj, (Board,)):
+            return obj._rooms_dict
+        if isinstance(obj, (Client, Game)):
+            return obj.__dict__
+        return JSONEncoder.default(self, obj)
 
 
 def format_hallway_name(hallway: Tuple[str, str]) -> str:
