@@ -1,10 +1,18 @@
-FROM python:alpine
+FROM node:10
 
-EXPOSE 5000
+RUN npm i npm@latest -g
 
-ENV PYTHONPATH="$PYTHONPATH:/core"
+RUN mkdir /opt/app && chown node:node /opt/app
+WORKDIR /opt/app
 
-RUN pip install flask
-RUN pip install requests
-RUN pip install attrs
-RUN pip install networkx
+# install dependencies in container
+USER node
+COPY ./client/package.json ./client/package-lock.json ./
+RUN npm install --no-optional && npm cache clean --force
+ENV PATH /opt/app/node_modules/.bin:$PATH
+
+WORKDIR /opt/app/src
+COPY ./client/src .
+
+WORKDIR /opt/app/public
+COPY ./client/public .
