@@ -43,44 +43,44 @@ services:
       app_net:
         ipv4_address: 172.16.238.11
 
-  # client2:
-  #   build: 
-  #     context: ./
-  #     dockerfile: ./client/Dockerfile
-  #   entrypoint:
-  #     - python3
-  #     - ./client/app.py
-  #   environment: 
-  #     SERVER_IP: 172.16.238.10
-  #     SERVER_PORT: 5000
-  #   volumes:
-  #     - ./client:/client
-  #     - ./core:/core
-  #   ports:
-  #     - 5002:5000
-  #   networks:
-  #     app_net:
-  #       ipv4_address: 172.16.238.12
+  client2:
+    build: 
+      context: ./
+      dockerfile: ./client/Dockerfile
+    entrypoint:
+      - python3
+      - ./client/app.py
+    environment: 
+      SERVER_IP: 172.16.238.10
+      SERVER_PORT: 5000
+    volumes:
+      - ./client:/client
+      - ./core:/core
+    ports:
+      - 5002:5000
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.12
 
 
-  # client3:
-  #   build: 
-  #     context: ./
-  #     dockerfile: ./client/Dockerfile
-  #   entrypoint:
-  #     - python3
-  #     - ./client/app.py
-  #   environment: 
-  #     SERVER_IP: 172.16.238.10
-  #     SERVER_PORT: 5000
-  #   volumes:
-  #     - ./client:/client
-  #     - ./core:/core
-  #   ports:
-  #     - 5003:5000
-  #   networks:
-  #     app_net:
-  #       ipv4_address: 172.16.238.13
+  client3:
+    build: 
+      context: ./
+      dockerfile: ./client/Dockerfile
+    entrypoint:
+      - python3
+      - ./client/app.py
+    environment: 
+      SERVER_IP: 172.16.238.10
+      SERVER_PORT: 5000
+    volumes:
+      - ./client:/client
+      - ./core:/core
+    ports:
+      - 5003:5000
+    networks:
+      app_net:
+        ipv4_address: 172.16.238.13
 
 
         # Use postgres/example user/password credentials
