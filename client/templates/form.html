@@ -6,7 +6,21 @@
 
 {% block content %}
 <div class="form-container">
-  <form name=game-form id=game-form class="game-form" method="POST" action="/game">
+  <div class="alert">
+    {% if turn %}
+      Your turn!
+    {% endif %}
+
+    {% if suggestion_result %}
+      {{suggestion_result[0]['character']}} has shared {{suggestion_result[0]['card']}} with you.
+    {% endif %}
+  
+    {% if accusation_result %}
+      {{accusation_result}}
+    {% endif %}
+  </div>
+
+  <form name=game-form id=game-form class="game-form" method="POST" action="/submit">
     <select name="character" id="character" form_id=character-form>
       <option disabled selected value> Select a character </option>
       {% for character in characters %}
@@ -26,13 +40,21 @@
       {% endfor %}
     </select>
     {% if suggestion is sameas true %}
-    <input type="submit" name="suggest" value="Make a Suggestion">
+    <input type="submit" name="submit" value="Make a Suggestion">
     {% endif %}
     {% if accusation is sameas true %}
-    <input type="submit" name="accuse" value="Make an Accusation">
+    <input type="submit" name="submit" value="Make an Accusation">
     {% endif %}
-
   </form>
+  
+  <div class="continue-game">
+    {% if suggestion_result %}
+      <input type="submit" name="submit" value="Make an Accusation">
+      <input type="submit" name="submit" value="Make a Move">
+    {% endif %}
+    </div>
+
 </div>  
+
 
 {% endblock %}

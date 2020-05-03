@@ -46,6 +46,10 @@ class App(Flask):
     #  Add more attributes you need to access globally
     characters = []
     client_ids = []
+    suggestion = []
+    accusation = ''
+    # Boolean gets cached :/
+    turn = ['True']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -97,23 +101,37 @@ def join_game():
         logging.info("Client ID: %s", join_response.client_id)
         APP.characters.append(join_response.player)
         APP.client_ids.append(join_response.client_id)
-
-    # Add logic here to determine if game is ready
+    # TODO: Determine if game is ready
     return render_template('home.html',
                            character=selected_character,
                            ready=True)
 
-@APP.route('/game', methods=['POST'])
+@APP.route('/game', methods=['GET','POST'])
 def start_game():
-
-    # Add logic here to determien true/false for suggestion/accusation
     return render_template('game.html',
                             characters=list(game_const.CHARACTERS),
                             weapons=list(game_const.WEAPONS),
                             rooms=list(game_const.ROOMS),
                             suggestion=True,
                             accusation=False,
-                            move=False)
+                            move=False,
+                            turn=App.turn,
+                            suggestion_result=App.suggestion,
+                            accusation_result=App.accusation)
+
+@APP.route('/submit', methods=['POST'])
+def accuse():
+    APP.suggestion.clear()
+    App.turn.clear()
+    if request.form['submit'] == "Make a Suggestion":
+        # TODO: Determine if there are cards to show
+        APP.suggestion.append({"character": "Plum","card": "Library"})
+
+    elif request.form['submit'] == "Make an Accusation":
+        # TODO: Determine if accusation is correct
+        APP.accusation = True
+
+    return redirect(url_for('start_game'))
 
 @APP.route('/api/game_state', methods=['GET'])
 def api_game_state():
