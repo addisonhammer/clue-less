@@ -1,0 +1,38 @@
+{% extends 'layout.html' %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/form.css') }}?version=1">
+{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <form name=game-form id=game-form class="game-form" method="POST" action="/game">
+    <select name="character" id="character" form_id=character-form>
+      <option disabled selected value> Select a character </option>
+      {% for character in characters %}
+          <option value="{{ character }}">{{ character }}</option>
+      {% endfor %}
+    </select>
+    <select name="weapon" id="weapon" form_id=weapon-form>
+      <option disabled selected value> Select a weapon </option>
+      {% for weapon in weapons %}
+          <option value="{{ weapon }}">{{ weapon }}</option>
+      {% endfor %}
+    </select>
+    <select name="room" id="room" form_id=room-form>
+      <option disabled selected value> Select a room </option>
+      {% for room in rooms %}
+          <option value="{{ room }}">{{ room }}</option>
+      {% endfor %}
+    </select>
+    {% if suggestion is sameas true %}
+    <input type="submit" name="suggest" value="Make a Suggestion">
+    {% endif %}
+    {% if accusation is sameas true %}
+    <input type="submit" name="accuse" value="Make an Accusation">
+    {% endif %}
+
+  </form>
+</div>  
+
+{% endblock %}

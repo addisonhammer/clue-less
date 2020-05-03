@@ -1,10 +1,11 @@
 {% extends 'layout.html' %}
 
 {% block css %}
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/global.css') }}?version=1.18">
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/global.css') }}?version=1">
 {% endblock %}
 
 {% block content %}
+  <h1>Who done it?</h1>
   {% if characters %}
   <form name=join-form id=join-form class="form-inline" method="POST" action="/join">
     <h2>Select your character:</h2>
@@ -13,7 +14,7 @@
           <option value="{{ character }}">{{ character }}</option>
       {% endfor %}
     </select>  
-    <input type="submit" value="Join Game">
+    <input type="submit" name="join_game" value="Join Game">
   </form>
   {% endif %}
 
@@ -22,7 +23,9 @@
   {% endif %}
 
   {% if ready is sameas true %}
-  <button>Start Game</button>
+  <form name=start-game-form id=start-game-form class="form-inline" method="POST" action="/game">
+    <input type="submit" name="start_game" value="Start Game">
+  </form>
   {% endif %}
 
   {% if ready is sameas false %}

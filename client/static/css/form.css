@@ -1,0 +1,15 @@
+.form-container {
+    background-color: floralwhite;
+    margin: 0px 30px;
+    padding: 30px;
+}
+
+.game-form {
+    display: grid;
+    row-gap: 15px;
+    grid-template-rows: repeat(3, 30px);
+}
+
+input {
+    padding: 10px;
+}

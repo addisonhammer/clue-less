@@ -103,6 +103,17 @@ def join_game():
                            character=selected_character,
                            ready=True)
 
+@APP.route('/game', methods=['POST'])
+def start_game():
+
+    # Add logic here to determien true/false for suggestion/accusation
+    return render_template('game.html',
+                            characters=list(game_const.CHARACTERS),
+                            weapons=list(game_const.WEAPONS),
+                            rooms=list(game_const.ROOMS),
+                            suggestion=True,
+                            accusation=False,
+                            move=False)
 
 @APP.route('/api/game_state', methods=['GET'])
 def api_game_state():
