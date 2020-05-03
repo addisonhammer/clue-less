@@ -44,14 +44,8 @@ class AppData(object):
 class App(Flask):
     app_data: AppData = AppData()
     #  Add more attributes you need to access globally
-    player_name: str = ''
-    character: str = ''
-    client_ids = []
-    game_ids = []
     characters = []
-    suspect_suggest = ''
-    weapon_suggest = ''
-    room_suggest = ''
+    client_ids = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -89,116 +83,37 @@ def debug_app():
         app_dict.update(seen_cards=APP.app_data.seen_cards)
     return jsonify(app_dict)
 
+@APP.route('/')
+def main():
+    return render_template('home.html', 
+                            characters=list(game_const.CHARACTERS))
 
-@APP.route('/join', methods=['GET', 'POST'])
+@APP.route('/join', methods=['POST'])
 def join_game():
-    if request.method == 'POST':
-        character_selection = request.form.get('character')
-        logging.info('Selected character: %s', character_selection)
-        if character_selection:
-            join_response = APP.app_data.server.send_join_request(
-                character_selection)
-            logging.info("Client ID: %s", join_response.client_id)
-            APP.characters.append(join_response.player)
-            APP.client_ids.append(join_response.client_id)
+    selected_character = request.form.get('character')
+    logging.info('Selected character: %s', selected_character)
+    if selected_character:
+        join_response = APP.app_data.server.send_join_request(selected_character)
+        logging.info("Client ID: %s", join_response.client_id)
+        APP.characters.append(join_response.player)
+        APP.client_ids.append(join_response.client_id)
 
-            APP.app_data.client_id = join_response.client_id
-            APP.app_data.player_name = join_response.player
-        return redirect(url_for('queue', client_id=APP.app_data.client_id))
+    # Add logic here to determine if game is ready
+    return render_template('home.html',
+                           character=selected_character,
+                           ready=True)
 
-    return render_template('home.html.jinja',
-                           characters=list(game_const.CHARACTERS))
+@APP.route('/game', methods=['POST'])
+def start_game():
 
-
-@APP.route('/queue/<client_id>', methods=['GET', 'POST'])
-def queue(client_id):
-    global game_id
-    if request.method == 'POST':
-        if "start_game" in request.form:
-            logging.info('Client %s request to start the game', client_id)
-            game_id = APP.app_data.server.send_start_game_request()
-            if not game_id:
-                return 'Please wait while we find an available game server for you.'
-            else:
-                logging.info("Game ID: %s", game_id)
-                APP.game_ids.append(game_id)
-                return redirect(url_for('game', game_id=game_id, client_id=client_id))
-
-    return render_template('queue.html.jinja',
-                           pending=False)
-
-
-@APP.route('/game/<game_id>/<client_id>/suggest', methods=['GET', 'POST'])
-def game(game_id, client_id):
-    logging.info('Game %s has started', game_id)
-    global suspect_suggest
-    global weapon_suggest
-    global room_suggest
-    # POST request for suggestion
-    if request.method == 'POST':
-        form_results = request.form
-        logging.info("Sending suggestion request data: %s", form_results)
-        suspect_suggest = form_results.get("suspect")
-        weapon_suggest = form_results.get("weapon")
-        room_suggest = form_results.get("room")
-        # i am unable to send form_results to new page because flask so have to make them global
-        return redirect(url_for('result', game_id=game_id, client_id=client_id))
-
-    return render_template('suggestion.html.jinja',
-                           client_ids=APP.client_ids,
-                           game_ids=APP.game_ids,
-                           characters=APP.characters,
-                           names=list(game_const.CHARACTERS),
-                           weapons=list(game_const.WEAPONS),
-                           rooms=list(game_const.ROOMS))
-
-
-@APP.route('/result/<game_id>/<client_id>', methods=['GET', 'POST'])
-def result(game_id, client_id):
-    logging.info("Suggestion result: %s", "Incorrect")
-    # POST request for accusation
-    if request.method == 'POST':
-        if request.form['button'] == 'Make an Accusation':
-            return redirect(url_for('accuse', game_id=game_id, client_id=client_id))
-        else:
-            return redirect(url_for('move', game_id=game_id, client_id=client_id))
-
-    return render_template('result.html.jinja',
-                           suspect=suspect_suggest,
-                           weapon=weapon_suggest,
-                           room=room_suggest,
-                           result=False)
-
-
-@APP.route('/accuse/<game_id>/<client_id>', methods=['GET', 'POST'])
-def accuse(game_id, client_id):
-    # POST request for accusation
-    if request.method == 'POST':
-        form_results = request.form
-        logging.info("Sending accusation request data: %s", form_results)
-        logging.info("Accusation result: %s", "Incorrect")
-        return 'Your accusation was incorrect. Game over.'
-
-    return render_template('accusation.html.jinja',
-                           client_ids=APP.client_ids,
-                           game_ids=APP.game_ids,
-                           characters=APP.characters,
-                           names=list(game_const.CHARACTERS),
-                           weapons=list(game_const.WEAPONS),
-                           rooms=list(game_const.ROOMS))
-
-
-@APP.route('/move/<game_id>/<client_id>', methods=['GET', 'POST'])
-def move(game_id, client_id):
-    if request.method == 'POST':
-        form_results = request.form
-        logging.info("Sending move request data: %s", form_results)
-        logging.info("Move result: %s", "Succesful")
-        return 'You have successfully moved.'
-
-    return render_template('room.html.jinja',
-                           rooms=['Billiard', 'Lounge'])
-
+    # Add logic here to determien true/false for suggestion/accusation
+    return render_template('game.html',
+                            characters=list(game_const.CHARACTERS),
+                            weapons=list(game_const.WEAPONS),
+                            rooms=list(game_const.ROOMS),
+                            suggestion=True,
+                            accusation=False,
+                            move=False)
 
 @APP.route('/api/game_state', methods=['GET'])
 def api_game_state():

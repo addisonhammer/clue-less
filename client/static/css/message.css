@@ -1,0 +1,9 @@
+.message-container {
+    background-color: floralwhite;
+    margin: 0px 30px;
+    padding: 30px;
+    overflow-y: scroll;
+    max-height: 325px;
+    text-align: left;
+}
+

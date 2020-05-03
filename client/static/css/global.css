@@ -1,0 +1,66 @@
+body {
+    text-align: center;
+    font-family: "open-sans",sans-serif;
+    display: table-cell;
+    vertical-align: middle;
+    background-color: darkslategray;
+    position: relative;
+}
+
+html {
+    display: table;
+    margin: auto;
+}
+
+html, body {
+    height: 100%;
+}
+
+h1 {
+    font-size: 4em;
+    margin: 0;
+    color: cornsilk;
+}
+
+h2 {
+    color: cornsilk;
+}
+
+header {
+    position: absolute;
+    top: 0;
+    margin-top: 20px;
+    width: 100%;
+    font-size: 4em;
+    color: cornsilk;
+}
+
+footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    margin-bottom: 20px;
+    font-size: smaller;
+}
+
+select, input {
+    font-size: 14px;
+    border: none;
+    background: white;
+    outline-style: none;
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}
+
+input {
+    border-radius: 8px;
+}
+
+input:active {
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+    transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+}
+
+.game-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}

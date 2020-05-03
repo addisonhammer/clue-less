@@ -1,0 +1,14 @@
+{% extends 'layout.html' %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/global.css') }}?version=1">
+{% endblock %}
+
+{% block content %}
+  <header><b>Who done it?</b></header>
+  <div class="game-container">
+    {% include 'message.html' %}
+    {% include 'board.html' %} 
+    {% include 'form.html' %}   
+  </div>
+{% endblock %}

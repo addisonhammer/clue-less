@@ -1,0 +1,35 @@
+{% extends 'layout.html' %}
+
+{% block css %}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/global.css') }}?version=1">
+{% endblock %}
+
+{% block content %}
+  <h1>Who done it?</h1>
+  {% if characters %}
+  <form name=join-form id=join-form class="form-inline" method="POST" action="/join">
+    <h2>Select your character:</h2>
+    <select name="character" id="character" form_id=character-form>
+      {% for character in characters %}
+          <option value="{{ character }}">{{ character }}</option>
+      {% endfor %}
+    </select>  
+    <input type="submit" name="join_game" value="Join Game">
+  </form>
+  {% endif %}
+
+  {% if character %}
+  <h2>You've selected {{character}}.</h2>
+  {% endif %}
+
+  {% if ready is sameas true %}
+  <form name=start-game-form id=start-game-form class="form-inline" method="POST" action="/game">
+    <input type="submit" name="start_game" value="Start Game">
+  </form>
+  {% endif %}
+
+  {% if ready is sameas false %}
+  <h3>Please wait as we find an available game server for you.</h3>
+  {% endif %}
+
+{% endblock %}
