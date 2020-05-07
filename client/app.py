@@ -89,7 +89,7 @@ def main():
     return render_template('home.html', 
                             characters=list(game_const.CHARACTERS))
 
-@APP.route('/join', methods=['POST'])
+@APP.route('/join_game', methods=['POST'])
 def join_game():
 
     # Player selects a character
@@ -115,10 +115,15 @@ def join_game():
                            character=APP.app_data.character,
                            ready=APP.app_data.ready)
 
-@APP.route('/game', methods=['POST'])
+@APP.route('/start_game', methods=['POST'])
 def start_game():
+    game_response = APP.app_data.server.send_start_game_request()
+    APP.app_data.game_id = game_response.game_id
 
-    # Add logic here to determien true/false for suggestion/accusation
+    return redirect(url_for('game', game_id=APP.app_data.game_id))
+
+@APP.route('/game/<game_id>', methods=['GET', 'POST'])
+def game(game_id):
     return render_template('game.html',
                             characters=list(game_const.CHARACTERS),
                             weapons=list(game_const.WEAPONS),

@@ -7,7 +7,7 @@
 {% block content %}
   <h1>Who done it?</h1>
   {% if characters %}
-  <form name=join-form id=join-form class="form-inline" method="POST" action="/join">
+  <form name=join-form id=join-form class="form-inline" method="POST" action="/join_game">
     <h2>Select your character:</h2>
     <select name="character" id="character" form_id=character-form>
       {% for character in characters %}
@@ -23,14 +23,14 @@
   {% endif %}
 
   {% if ready is sameas true %}
-  <form name=start-game-form id=start-game-form class="form-inline" method="POST" action="/game">
+  <form name=start-game-form id=start-game-form class="form-inline" method="POST" action="/start_game">
     <input type="submit" name="start_game" value="Start Game">
   </form>
   {% endif %}
 
   {% if ready is sameas false %}
   <h2>Please wait as we find an available game server for you.</h2>
-  <form name=start-game-form id=start-game-form class="form-inline" method="POST" action="/join">
+  <form name=start-game-form id=start-game-form class="form-inline" method="POST" action="/join_game">
     <input type="submit" name="start_game" value="Try again">
   </form>
   {% endif %}
