@@ -110,7 +110,7 @@ def start_game():
     return render_template('game.html',
                             characters=list(game_const.CHARACTERS),
                             weapons=list(game_const.WEAPONS),
-                            rooms=list(game_const.ROOMS),
+                            rooms=list(game_const.ROOMS_LAYOUT),
                             suggestion=True,
                             accusation=False,
                             move=False)
