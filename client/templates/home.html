@@ -29,7 +29,10 @@
   {% endif %}
 
   {% if ready is sameas false %}
-  <h3>Please wait as we find an available game server for you.</h3>
+  <h2>Please wait as we find an available game server for you.</h2>
+  <form name=start-game-form id=start-game-form class="form-inline" method="POST" action="/join">
+    <input type="submit" name="start_game" value="Try again">
+  </form>
   {% endif %}
 
 {% endblock %}

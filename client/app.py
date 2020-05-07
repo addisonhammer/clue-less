@@ -39,13 +39,14 @@ class AppData(object):
     client_id: str = ''
     seen_cards: List[str] = []
     player_deck: List[str] = []
+    character: str = ''
+    client_id: str = ''
+    ready: bool = False
 
 
 class App(Flask):
     app_data: AppData = AppData()
     #  Add more attributes you need to access globally
-    characters = []
-    client_ids = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -90,18 +91,29 @@ def main():
 
 @APP.route('/join', methods=['POST'])
 def join_game():
-    selected_character = request.form.get('character')
-    logging.info('Selected character: %s', selected_character)
-    if selected_character:
-        join_response = APP.app_data.server.send_join_request(selected_character)
-        logging.info("Client ID: %s", join_response.client_id)
-        APP.characters.append(join_response.player)
-        APP.client_ids.append(join_response.client_id)
 
-    # Add logic here to determine if game is ready
+    # Player selects a character
+    if not APP.app_data.character:
+        APP.app_data.character = request.form.get('character')
+        logging.info('Selected character: %s', APP.app_data.character)
+
+    # Player request to join a game  
+    if not APP.app_data.client_id:
+        join_response = APP.app_data.server.send_join_request(APP.app_data.character)
+        logging.info("Client ID: %s", join_response.client_id)
+        APP.app_data.client_id = join_response.client_id
+
+    # Player waits for a game server to be available
+    if APP.app_data.client_id:
+        player_count = APP.app_data.server.send_player_count_request()
+        logging.info("Player(s) Count: %s",player_count)
+        if player_count in range(3,6):
+            APP.app_data.ready = True
+            logging.info("%s entered the game", APP.app_data.character)
+    
     return render_template('home.html',
-                           character=selected_character,
-                           ready=True)
+                           character=APP.app_data.character,
+                           ready=APP.app_data.ready)
 
 @APP.route('/game', methods=['POST'])
 def start_game():
