@@ -10,6 +10,7 @@ from flask import Flask, request, render_template, jsonify, redirect, url_for
 
 from core.messages import PlayerMoveRequest, PlayerMoveResponse
 from core.server_boundary import Server
+from core.messages import GameStateRequest
 
 from core.game import GameEncoder
 from core import game_const
@@ -29,7 +30,7 @@ class Actions(Enum):
 class AppData(object):
     server = Server(SERVER_IP, SERVER_PORT)
     next_action: Actions = Actions.WAIT
-    game_state: messages.GameStateRequest = None
+    game_state: messages.GameStateRequest = GameStateRequest(None, None, None, None, None)
     move_request: messages.PlayerMoveRequest = None
     suggest_request: messages.PlayerSuggestionRequest
     suggest_results: messages.PlayerSuggestionResult
@@ -113,7 +114,8 @@ def start_game():
                             rooms=list(game_const.ROOMS_LAYOUT),
                             suggestion=True,
                             accusation=False,
-                            move=False)
+                            move=False,
+                            game_state=APP.app_data.game_state)
 
 @APP.route('/api/game_state', methods=['GET'])
 def api_game_state():

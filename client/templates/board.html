@@ -7,7 +7,28 @@
 {% block content %}
   <div class="room-container">
     {% for room in rooms %}
-      <div class="room">{{room}}</div>
+      <div class="room">
+        <div>{{room}}</div>
+        {% if game_state.whereabouts is not none %}  
+          {% for char in game_state.whereabouts %}
+            {% if game_state.whereabouts[char] == room %}
+              {% if char == "Prof. Plum" %}
+                <div class="plum">{{char}}</div>
+              {% elif char == "Mrs. White" %}  
+                <div class="white">{{char}}</div>
+              {% elif char == "Col. Mustard" %}  
+                <div class="mustard">{{char}}</div>
+              {% elif char == "Miss Scarlet" %}  
+                <div class="scarlet">{{char}}</div>
+              {% elif char == "Mrs. Peacock" %}  
+                <div class="peacock">{{char}}</div>
+              {% elif char == "Mr. Green" %}  
+                <div class="green">{{char}}</div>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </div>
     {% endfor %}
   </div>
 {% endblock %}
