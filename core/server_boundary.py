@@ -8,11 +8,13 @@ from core.messages import JoinGameRequest, JoinGameResponse
 from core.messages import StartGameRequest, StartGameResponse
 from core.messages import PlayerCountRequest, PlayerCountResponse
 from core.messages import PlayerCountUpdateRequest, PlayerCountUpdateResponse
+from core.messages import GameStateRequest, ClientGameStateRequest
 
 JOIN_GAME_ROUTE = 'api/join_game'
 REQUEST_GAME_ROUTE = 'api/request_game'
 PLAYER_COUNT_REQUEST_ROUTE = 'api/player_count'
 PLAYER_COUNT_UPDATE_ROUTE = 'join'
+GAME_STATE_ROUTE = '/api/game_state'
 
 
 class Server(object):
@@ -51,6 +53,11 @@ class Server(object):
             route=PLAYER_COUNT_UPDATE_ROUTE, request=request)
         count_response = PlayerCountUpdateResponse.from_dict(response)
         return count_response.accepted
+
+    def get_game_state(self):
+        request = ClientGameStateRequest(client_id=self.client_id)
+        response = self._post_request(route=GAME_STATE_ROUTE, request=request)
+        return GameStateRequest.from_dict(response)
 
     def _post_request(self, route, request) -> Dict[str, Any]:
         port = f':{self._port}' if self._port else ''
