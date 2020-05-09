@@ -44,9 +44,8 @@ class Client(object):
         self._port = port
         self.client_id = str(uuid.uuid4())
 
-    def send_game_state(self, players: List[Player],
-                        active_player: Player) -> bool:
-        logging.info('Sending Game State to %s', self.player_name)
+    def get_game_state(self, players: List[Player],
+                        active_player: Player):
         whereabouts = [
             f'{player.name}@{player.room.name}' for player in players
         ]
@@ -54,14 +53,24 @@ class Client(object):
                   self.player_name][0]
         player_cards = [card.name for card in player.cards]
         current_turn = active_player.name
-        request = GameStateRequest(game_id=self.game_id,
+        return GameStateRequest(game_id=self.game_id,
                                    client_id=self.client_id,
                                    whereabouts=whereabouts,
                                    current_turn=current_turn,
                                    player_cards=player_cards)
+
+    def send_game_state(self, players: List[Player],
+                        active_player: Player) -> bool:
+        logging.info('Sending Game State to %s', self.player_name)
+        
+        request = self.get_game_state(players, active_player)
+
         response = self._post_request(
             route=GAME_STATE_ROUTE, request=request)
         return response[ACK]
+
+
+
 
     def send_move_request(self, valid_moves: List[Room]) -> Optional[Room]:
         logging.info('Sending Move Request to %s', self.player_name)

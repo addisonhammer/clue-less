@@ -105,12 +105,10 @@ class GameStateRequest(Message):
     player_cards: List[str]  # The cards in the player's hand
 
 
-# @attr.s(auto_attribs=True, slots=True)
-# class GameStateResponse(Message):
-#     """This is the client response indicating they are still connected."""
-#     game_id: str
-#     player: str
-#     connected: bool
+@attr.s(auto_attribs=True, slots=True)
+class ClientGameStateRequest(Message):
+    """This is the client requesting the game state."""
+    client_id: str
 
 
 @attr.s(auto_attribs=True, slots=True)
