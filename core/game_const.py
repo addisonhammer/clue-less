@@ -26,7 +26,6 @@ KITCHEN = 'Kitchen'
 CONSERVATORY = 'Conservatory'
 ROOMS = (STUDY, HALL, LOUNGE, LIBRARY, BILLIARD, DINING, BALLROOM, KITCHEN, CONSERVATORY)
 
-HALLWAY = 'test'
 EMPTY = ''
 ROOMS_LAYOUT = (
     STUDY,                   (STUDY, HALL),            HALL,                 (HALL, LOUNGE),      LOUNGE,
