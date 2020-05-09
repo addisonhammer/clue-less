@@ -106,14 +106,6 @@ def join_game():
 
 @APP.route('/game', methods=['POST'])
 def start_game():
-    App.app_data.game_state.whereabouts = {
-        game_const.PLUM : game_const.BILLIARD,
-        game_const.WHITE : game_const.BILLIARD,
-        game_const.MUSTARD : game_const.BILLIARD,
-        game_const.SCARLET : game_const.BILLIARD,
-        game_const.PEACOCK : game_const.BILLIARD,
-        game_const.GREEN : game_const.BILLIARD
-    } 
     
     # Add logic here to determien true/false for suggestion/accusation
     return render_template('game.html',
