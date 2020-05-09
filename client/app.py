@@ -106,9 +106,9 @@ def join_game():
     logging.info("Game ID: %s", join_response.client_id)
     APP.app_data.game_id = game_response.game_id
 
+    # Player request game state
     client = Client(APP.app_data.character, SERVER_IP, SERVER_PORT, APP.app_data.game_id)
     game_state = client.send_game_state(list(game_const.CHARACTERS), APP.app_data.character)
-
     logging.info('Game state: %s', game_state)
 
     return render_template('home.html',
