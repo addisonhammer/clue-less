@@ -106,6 +106,15 @@ def join_game():
 
 @APP.route('/game', methods=['POST'])
 def start_game():
+    # Uncomment to test displaying character whereabouts
+    # App.app_data.game_state.whereabouts = {
+    #     game_const.PLUM : (game_const.STUDY, game_const.LIBRARY),
+    #     game_const.WHITE : game_const.STUDY,
+    #     game_const.MUSTARD : game_const.BILLIARD,
+    #     game_const.SCARLET : (game_const.LOUNGE, game_const.DINING),
+    #     game_const.PEACOCK : game_const.KITCHEN,
+    #     game_const.GREEN : game_const.BILLIARD
+    # } 
     
     # Add logic here to determien true/false for suggestion/accusation
     return render_template('game.html',
