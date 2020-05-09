@@ -1,29 +1,38 @@
 {% extends 'layout.html' %}
 
+{% set img_size = "width:30px;height:30px;" %}
+
 {% block css %}
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/board.css') }}?version=1">
 {% endblock %}
 
 {% block content %}
   <div class="room-container">
-    {% for room in rooms %}
-      <div class="room">
-        <div>{{room}}</div>
+    {% for room in room_layout %}
+        {% if room|length == 2 %}
+          <div class="hall">
+        {% elif room == "" %}
+          <div class="empty">
+        {% else %}
+          <div class="room">
+          <span class="roomtext">{{room}}</span>
+        {% endif %}
+        
         {% if game_state.whereabouts is not none %}  
           {% for char in game_state.whereabouts %}
             {% if game_state.whereabouts[char] == room %}
               {% if char == "Prof. Plum" %}
-                <div class="plum">{{char}}</div>
+              <div class="imagecontainer"><img src="https://i.imgur.com/cAdwPv2.jpg" title="{{char}}" style="{{img_size}}"></div>
               {% elif char == "Mrs. White" %}  
-                <div class="white">{{char}}</div>
+              <div><img src="https://imgur.com/Tx5CzQ6.png" title="{{char}}" style="{{img_size}}"></div>
               {% elif char == "Col. Mustard" %}  
-                <div class="mustard">{{char}}</div>
+              <div><img src="https://imgur.com/UHsFxqv.jpg" title="{{char}}" style="{{img_size}}"></div>
               {% elif char == "Miss Scarlet" %}  
-                <div class="scarlet">{{char}}</div>
+              <div><img src="https://imgur.com/fCVoecB.jpg" title="{{char}}" style="{{img_size}}"></div>
               {% elif char == "Mrs. Peacock" %}  
-                <div class="peacock">{{char}}</div>
+              <div><img src="https://imgur.com/ztpLTO6.jpg" title="{{char}}" style="{{img_size}}"></div>
               {% elif char == "Mr. Green" %}  
-                <div class="green">{{char}}</div>
+              <div><img src="https://i.imgur.com/OOQ6D66.png" title="{{char}}" style="{{img_size}}"></div>
               {% endif %}
             {% endif %}
           {% endfor %}
