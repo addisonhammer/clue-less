@@ -1,0 +1,19 @@
+{% block css %}
+  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/cards.css') }}?version=1">
+{% endblock %}
+
+{% block content %}
+<div class="card-hand">
+    {% for card in game_state.player_cards %}
+    <div class="card">
+        {% set url = card|card_url %}
+        {% if url == "" %}
+        <span class="cardcontent">{{card}}</span>
+        {% else %}
+        <img class="card-image" src="{{url}}" title="{{card}}">
+        {% endif %}
+    </div>
+    {% endfor %}
+
+</div>
+{% endblock %}

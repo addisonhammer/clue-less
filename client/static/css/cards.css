@@ -1,0 +1,33 @@
+
+.card-hand {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    column-gap: 5px;
+    row-gap: 5px;
+    grid-column: 2 / 2;
+    margin: auto auto;
+    border-style: solid;
+    background-color: wheat;
+}
+
+.card{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.cardcontent{
+    margin: auto auto;
+    vertical-align: middle;
+    
+}
+
+.card-image{
+    display: flex;
+    margin: auto auto;
+    justify-content: center;
+    height: 75%;
+    width: 60%;
+    border-radius: 5px;
+    box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
+}

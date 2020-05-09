@@ -1,7 +1,5 @@
 {% extends 'layout.html' %}
 
-{% set img_size = "width:30px;height:30px;" %}
-
 {% block css %}
   <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/board.css') }}?version=1">
 {% endblock %}
@@ -21,18 +19,11 @@
         {% if game_state.whereabouts is not none %}  
           {% for char in game_state.whereabouts %}
             {% if game_state.whereabouts[char] == room %}
-              {% if char == "Prof. Plum" %}
-              <div><img src="https://i.imgur.com/SkrJEKg.jpg" title="{{char}}" style="{{img_size}}"></div>
-              {% elif char == "Mrs. White" %}  
-              <div><img src="https://i.imgur.com/eb3WNlV.jpg" title="{{char}}" style="{{img_size}}"></div>
-              {% elif char == "Col. Mustard" %}  
-              <div><img src="https://i.imgur.com/d2tQgjj.jpg" title="{{char}}" style="{{img_size}}"></div>
-              {% elif char == "Miss Scarlet" %}  
-              <div><img src="https://i.imgur.com/u9scmgZ.jpg" title="{{char}}" style="{{img_size}}"></div>
-              {% elif char == "Mrs. Peacock" %}  
-              <div><img src="https://i.imgur.com/jAdapRJ.jpg" title="{{char}}" style="{{img_size}}"></div>
-              {% elif char == "Mr. Green" %}  
-              <div><img src="https://i.imgur.com/LJLp7gj.jpg" title="{{char}}" style="{{img_size}}"></div>
+              {% set url = char|card_url %}
+              {% if url == "" %}
+                <div class="in-room-char">{{char}}</div>
+              {% else %}
+                <div><img class="in-room-char" src="{{url}}" title="{{char}}" style="width:30px;height:30px;"></div>
               {% endif %}
             {% endif %}
           {% endfor %}

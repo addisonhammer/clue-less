@@ -62,5 +62,8 @@ input:active {
 
 .game-container {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: .5fr 1fr .5fr;
+    grid-template-rows: 1fr .25fr;
+
+    row-gap: 20px;
 }
