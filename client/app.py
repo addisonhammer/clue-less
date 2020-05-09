@@ -272,35 +272,35 @@ def card_url(card_text):
     elif card_text == game_const.REVOLVER:
         return "https://i.imgur.com/bpcjdJc.jpg"
     elif card_text == game_const.PLUM:
-        return "https://i.imgur.com/7lYwXpc.jpg"
+        return "https://i.imgur.com/7lYwXpc.jpg?1"
     elif card_text == game_const.WHITE:
-        return "https://i.imgur.com/arLVu0u.jpg"
+        return "https://i.imgur.com/arLVu0u.jpg?1"
     elif card_text == game_const.MUSTARD:
-        return "https://i.imgur.com/j1FRYp4.jpg"
+        return "https://i.imgur.com/j1FRYp4.jpg?1"
     elif card_text == game_const.SCARLET:
-        return "https://i.imgur.com/SQFXJFk.jpg"
+        return "https://i.imgur.com/SQFXJFk.jpg?1"
     elif card_text == game_const.PEACOCK:
-        return "https://i.imgur.com/pN7b6nq.jpg"
+        return "https://i.imgur.com/pN7b6nq.jpg?1"
     elif card_text == game_const.GREEN:
-        return "https://i.imgur.com/tqtnJIn.jpg"
+        return "https://i.imgur.com/tqtnJIn.jpg?1"
     elif card_text == game_const.STUDY:
-        return "https://i.imgur.com/u8clJQw.jpg"
+        return "https://i.imgur.com/u8clJQw.jpg?1"
     elif card_text == game_const.HALL:
-        return "https://i.imgur.com/gcJOSk4.jpg"
+        return "https://i.imgur.com/gcJOSk4.jpg?1"
     elif card_text == game_const.LOUNGE:
-        return "https://i.imgur.com/mNQrQAw.jpg"
+        return "https://i.imgur.com/mNQrQAw.jpg?1"
     elif card_text == game_const.LIBRARY:
-        return "https://i.imgur.com/dPgtAXN.jpg"
+        return "https://i.imgur.com/dPgtAXN.jpg?1"
     elif card_text == game_const.BILLIARD:
-        return "https://i.imgur.com/0RnL0uu.jpg"
+        return "https://i.imgur.com/0RnL0uu.jpg?1"
     elif card_text == game_const.DINING:
-        return "https://i.imgur.com/aPne9NX.jpg"
+        return "https://i.imgur.com/aPne9NX.jpg?1"
     elif card_text == game_const.BALLROOM:
-        return "https://i.imgur.com/pRU9OYP.jpg"
+        return "https://i.imgur.com/pRU9OYP.jpg?1"
     elif card_text == game_const.KITCHEN:
-        return "https://i.imgur.com/6wclCaG.jpg"
+        return "https://i.imgur.com/6wclCaG.jpg?1"
     elif card_text == game_const.CONSERVATORY:
-        return "https://i.imgur.com/Gbq9kuk.jpg"
+        return "https://i.imgur.com/Gbq9kuk.jpg?1"
     else:
         return ""
 
