@@ -10,6 +10,7 @@ from flask import Flask, request, render_template, jsonify, redirect, url_for
 
 from core.messages import PlayerMoveRequest, PlayerMoveResponse
 from core.server_boundary import Server
+from core.client_boundary import Client
 
 from core.game import GameEncoder
 from core import game_const
@@ -39,13 +40,14 @@ class AppData(object):
     client_id: str = ''
     seen_cards: List[str] = []
     player_deck: List[str] = []
+    character: str = ''
+    client_id: str = ''
+    ready: bool = False
+
 
 
 class App(Flask):
     app_data: AppData = AppData()
-    #  Add more attributes you need to access globally
-    characters = []
-    client_ids = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -88,20 +90,30 @@ def main():
     return render_template('home.html', 
                             characters=list(game_const.CHARACTERS))
 
-@APP.route('/join', methods=['POST'])
+@APP.route('/join_game', methods=['POST'])
 def join_game():
-    selected_character = request.form.get('character')
-    logging.info('Selected character: %s', selected_character)
-    if selected_character:
-        join_response = APP.app_data.server.send_join_request(selected_character)
-        logging.info("Client ID: %s", join_response.client_id)
-        APP.characters.append(join_response.player)
-        APP.client_ids.append(join_response.client_id)
+    # Player selects a character
+    APP.app_data.character = request.form.get('character')
+    logging.info('Selected character: %s', APP.app_data.character)
 
-    # Add logic here to determine if game is ready
+    # Player get client id  
+    join_response = APP.app_data.server.send_join_request(APP.app_data.character)
+    logging.info("Client ID: %s", join_response.client_id)
+    APP.app_data.client_id = join_response.client_id
+
+    # Player get game id
+    game_response = APP.app_data.server.send_start_game_request()
+    logging.info("Game ID: %s", join_response.client_id)
+    APP.app_data.game_id = game_response.game_id
+
+    client = Client(APP.app_data.character, SERVER_IP, SERVER_PORT, APP.app_data.game_id)
+    game_state = client.send_game_state(list(game_const.CHARACTERS), APP.app_data.character)
+
+    logging.info('Game state: %s', game_state)
+
     return render_template('home.html',
-                           character=selected_character,
-                           ready=True)
+                           character=APP.app_data.character,
+                           ready=APP.app_data.ready)
 
 @APP.route('/game', methods=['POST'])
 def start_game():
