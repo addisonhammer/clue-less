@@ -41,7 +41,6 @@ class AppData(object):
     seen_cards: List[str] = []
     player_deck: List[str] = []
     character: str = ''
-    ready: bool = False
 
 
 class App(Flask):
@@ -83,10 +82,12 @@ def debug_app():
         app_dict.update(seen_cards=APP.app_data.seen_cards)
     return jsonify(app_dict)
 
+
 @APP.route('/')
 def main():
     return render_template('home.html', 
                             characters=list(game_const.CHARACTERS))
+
 
 @APP.route('/join_game', methods=['POST'])
 def join_game():
@@ -114,6 +115,7 @@ def join_game():
 
     return redirect(url_for('game', game_id=game_state_response.game_id))
 
+
 @APP.route('/game/<game_id>', methods=['GET', 'POST'])
 def game(game_id):
     return render_template('game.html',
@@ -123,6 +125,7 @@ def game(game_id):
                             suggestion=True,
                             accusation=False,
                             move=False)
+
 
 @APP.route('/api/game_state', methods=['GET'])
 def api_game_state():

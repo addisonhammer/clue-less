@@ -62,15 +62,10 @@ class Client(object):
     def send_game_state(self, players: List[Player],
                         active_player: Player) -> bool:
         logging.info('Sending Game State to %s', self.player_name)
-        
         request = self.get_game_state(players, active_player)
-
         response = self._post_request(
             route=GAME_STATE_ROUTE, request=request)
         return response[ACK]
-
-
-
 
     def send_move_request(self, valid_moves: List[Room]) -> Optional[Room]:
         logging.info('Sending Move Request to %s', self.player_name)

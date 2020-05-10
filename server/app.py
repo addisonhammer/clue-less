@@ -209,7 +209,6 @@ def game_state():
     return jsonify(game_state)
 
     
-
 # Define all @APP.routes above this line.
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
