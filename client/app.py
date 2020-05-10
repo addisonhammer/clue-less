@@ -10,6 +10,7 @@ from flask import Flask, request, render_template, jsonify, redirect, url_for
 
 from core.messages import PlayerMoveRequest, PlayerMoveResponse
 from core.server_boundary import Server
+from core.messages import GameStateRequest
 
 from core.game import GameEncoder
 from core import game_const
@@ -29,7 +30,7 @@ class Actions(Enum):
 class AppData(object):
     server = Server(SERVER_IP, SERVER_PORT)
     next_action: Actions = Actions.WAIT
-    game_state: messages.GameStateRequest = None
+    game_state: messages.GameStateRequest = GameStateRequest(None, None, None, None, None)
     move_request: messages.PlayerMoveRequest = None
     suggest_request: messages.PlayerSuggestionRequest
     suggest_results: messages.PlayerSuggestionResult
@@ -105,15 +106,31 @@ def join_game():
 
 @APP.route('/game', methods=['POST'])
 def start_game():
+    # Uncomment to test displaying character whereabouts
+    # App.app_data.game_state.whereabouts = {
+    #     game_const.PLUM : (game_const.STUDY, game_const.LIBRARY),
+    #     game_const.WHITE : (game_const.STUDY, game_const.LIBRARY),
+    #     game_const.MUSTARD : game_const.BILLIARD,
+    #     game_const.SCARLET : (game_const.LOUNGE, game_const.DINING),
+    #     game_const.PEACOCK : game_const.KITCHEN,
+    #     game_const.GREEN : game_const.BILLIARD
+    # } 
 
+    # App.app_data.game_state.player_cards = {
+    #     game_const.GREEN, game_const.BILLIARD, game_const.CANDLESTICK
+    # }
+    
     # Add logic here to determien true/false for suggestion/accusation
     return render_template('game.html',
+                            game_const=game_const,
                             characters=list(game_const.CHARACTERS),
                             weapons=list(game_const.WEAPONS),
-                            rooms=list(game_const.ROOMS_LAYOUT),
+                            rooms=list(game_const.ROOMS),
+                            room_layout=list(game_const.ROOMS_LAYOUT),
                             suggestion=True,
                             accusation=False,
-                            move=False)
+                            move=False,
+                            game_state=APP.app_data.game_state)
 
 @APP.route('/api/game_state', methods=['GET'])
 def api_game_state():
@@ -239,6 +256,54 @@ def api_accuse_result():
     response = {'ack': True}
     # logging.info('Sending Response: %s', response)
     return jsonify(response)
+
+@APP.template_filter('card_url')
+def card_url(card_text):
+    if card_text == game_const.DAGGER:
+        return "https://i.imgur.com/GfXbfdU.jpg"
+    elif card_text == game_const.WRENCH:
+        return "https://i.imgur.com/1QPD85h.jpg"
+    elif card_text == game_const.ROPE:
+        return "https://i.imgur.com/C6leiZm.jpg"
+    elif card_text == game_const.CANDLESTICK:
+        return "https://i.imgur.com/FG7mF6M.jpg"
+    elif card_text == game_const.PIPE:
+        return "https://i.imgur.com/kS8LUEu.jpg"
+    elif card_text == game_const.REVOLVER:
+        return "https://i.imgur.com/bpcjdJc.jpg"
+    elif card_text == game_const.PLUM:
+        return "https://i.imgur.com/7lYwXpc.jpg?1"
+    elif card_text == game_const.WHITE:
+        return "https://i.imgur.com/arLVu0u.jpg?1"
+    elif card_text == game_const.MUSTARD:
+        return "https://i.imgur.com/j1FRYp4.jpg?1"
+    elif card_text == game_const.SCARLET:
+        return "https://i.imgur.com/SQFXJFk.jpg?1"
+    elif card_text == game_const.PEACOCK:
+        return "https://i.imgur.com/pN7b6nq.jpg?1"
+    elif card_text == game_const.GREEN:
+        return "https://i.imgur.com/tqtnJIn.jpg?1"
+    elif card_text == game_const.STUDY:
+        return "https://i.imgur.com/u8clJQw.jpg?1"
+    elif card_text == game_const.HALL:
+        return "https://i.imgur.com/gcJOSk4.jpg?1"
+    elif card_text == game_const.LOUNGE:
+        return "https://i.imgur.com/mNQrQAw.jpg?1"
+    elif card_text == game_const.LIBRARY:
+        return "https://i.imgur.com/dPgtAXN.jpg?1"
+    elif card_text == game_const.BILLIARD:
+        return "https://i.imgur.com/0RnL0uu.jpg?1"
+    elif card_text == game_const.DINING:
+        return "https://i.imgur.com/aPne9NX.jpg?1"
+    elif card_text == game_const.BALLROOM:
+        return "https://i.imgur.com/pRU9OYP.jpg?1"
+    elif card_text == game_const.KITCHEN:
+        return "https://i.imgur.com/6wclCaG.jpg?1"
+    elif card_text == game_const.CONSERVATORY:
+        return "https://i.imgur.com/Gbq9kuk.jpg?1"
+    else:
+        return ""
+
 
 
 if __name__ == '__main__':
