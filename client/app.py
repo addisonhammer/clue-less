@@ -14,6 +14,7 @@ from core.server_boundary import Server
 from core.game import GameEncoder
 from core import game_const
 from core import messages
+from time import sleep
 
 SERVER_IP = os.environ.get('SERVER_IP')
 SERVER_PORT = os.environ.get('SERVER_PORT')
@@ -100,22 +101,18 @@ def join_game():
 
     # Player get game id
     game_response = APP.app_data.server.send_start_game_request()
-    logging.info("Game ID: %s", join_response.client_id)
+    logging.info("Game ID: %s", game_response.client_id)
     APP.app_data.game_id = game_response.game_id
 
+    if not APP.app_data.game_id:
+        sleep(15)
+        
     # Player request game state
     game_state_response = APP.app_data.server.get_game_state()
     logging.info("Game State: %s", game_state_response)
+    APP.app_data.game_state = game_response
 
-    if not game_state_response.game_id:
-        APP.app_data.ready=False        
-    else: 
-        return redirect(url_for('game', game_id=game_state_response.game_id))
-
-    # Add logic here to determine if game is ready
-    return render_template('home.html',
-                           character=APP.app_data.character,
-                           ready=APP.app_data.ready)
+    return redirect(url_for('game', game_id=game_state_response.game_id))
 
 @APP.route('/game/<game_id>', methods=['GET', 'POST'])
 def game(game_id):

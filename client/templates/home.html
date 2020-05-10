@@ -18,18 +18,4 @@
   </form>
   {% endif %}
 
-  {% if character %}
-  <h2>You've selected {{character}}.</h2>
-  {% endif %}
-
-  {% if ready is sameas true %}
-  <form name=start-game-form id=start-game-form class="form-inline" method="POST" action="/game">
-    <input type="submit" name="start_game" value="Start Game">
-  </form>
-  {% endif %}
-
-  {% if ready is sameas false %}
-  <h2>Please wait as we find an available game server for you.</h2>
-  {% endif %}
-
 {% endblock %}
