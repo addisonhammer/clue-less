@@ -146,22 +146,6 @@ def game(game_id):
                             game_state=APP.app_data.game_state)
 
 
-@APP.route('/api/game_state', methods=['GET'])
-def api_game_state():
-    logging.info('Received api_game_state Request: %s',
-                 request.args)
-    game_state = messages.GameStateRequest.from_dict(
-        request.args.to_dict(flat=False))
-    logging.info('Parsed Request: %s', game_state)
-    APP.app_data.game_state = game_state
-    APP.app_data.player_deck = game_state.player_cards
-    APP.app_data.game_id = game_state.game_id[0]
-    APP.next_action = Actions.WAIT
-    response = {'ack': True}
-    # logging.info('Sending Response: %s', response)
-    return jsonify(response)
-
-
 @APP.route('/api/player_move', methods=['GET'])
 def api_player_move():
     # logging.info('Received api_player_move Request: %s', request.args)
