@@ -6,8 +6,29 @@
 
 {% block content %}
   <div class="room-container">
-    {% for room in rooms %}
-      <div class="room">{{room}}</div>
+    {% for room in room_layout %}
+        {% if room|length == 2 %}
+          <div class="hall">
+        {% elif room == "" %}
+          <div class="empty">
+        {% else %}
+          <div class="room">
+          <span class="roomtext">{{room}}</span>
+        {% endif %}
+        
+        {% if game_state.whereabouts is not none %}  
+          {% for char in game_state.whereabouts %}
+            {% if game_state.whereabouts[char] == room %}
+              {% set url = char|card_url %}
+              {% if url == "" %}
+                <div class="in-room-char">{{char}}</div>
+              {% else %}
+                <div><img class="in-room-char" src="{{url}}" title="{{char}}" style="width:30px;height:30px;"></div>
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+      </div>
     {% endfor %}
   </div>
 {% endblock %}
