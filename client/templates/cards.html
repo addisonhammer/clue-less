@@ -4,6 +4,7 @@
 
 {% block content %}
 <div class="card-hand">
+  {% if game_state.player_cards is not none %}
     {% for card in game_state.player_cards %}
     <div class="card">
         {% set url = card|card_url %}
@@ -14,6 +15,6 @@
         {% endif %}
     </div>
     {% endfor %}
-
+  {% endif %}
 </div>
 {% endblock %}
