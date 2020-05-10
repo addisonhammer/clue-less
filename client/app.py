@@ -15,6 +15,7 @@ from core.messages import GameStateRequest
 from core.game import GameEncoder
 from core import game_const
 from core import messages
+from time import sleep
 
 SERVER_IP = os.environ.get('SERVER_IP')
 SERVER_PORT = os.environ.get('SERVER_PORT')
@@ -40,13 +41,11 @@ class AppData(object):
     client_id: str = ''
     seen_cards: List[str] = []
     player_deck: List[str] = []
+    character: str = ''
 
 
 class App(Flask):
     app_data: AppData = AppData()
-    #  Add more attributes you need to access globally
-    characters = []
-    client_ids = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -84,28 +83,42 @@ def debug_app():
         app_dict.update(seen_cards=APP.app_data.seen_cards)
     return jsonify(app_dict)
 
+
 @APP.route('/')
 def main():
     return render_template('home.html', 
                             characters=list(game_const.CHARACTERS))
 
-@APP.route('/join', methods=['POST'])
+
+@APP.route('/join_game', methods=['POST'])
 def join_game():
-    selected_character = request.form.get('character')
-    logging.info('Selected character: %s', selected_character)
-    if selected_character:
-        join_response = APP.app_data.server.send_join_request(selected_character)
-        logging.info("Client ID: %s", join_response.client_id)
-        APP.characters.append(join_response.player)
-        APP.client_ids.append(join_response.client_id)
+    # Player selects a character
+    APP.app_data.character = request.form.get('character')
+    logging.info('Selected character: %s', APP.app_data.character)
 
-    # Add logic here to determine if game is ready
-    return render_template('home.html',
-                           character=selected_character,
-                           ready=True)
+    # Player get client id  
+    join_response = APP.app_data.server.send_join_request(APP.app_data.character)
+    logging.info("Client ID: %s", join_response.client_id)
+    APP.app_data.client_id = join_response.client_id
 
-@APP.route('/game', methods=['POST'])
-def start_game():
+    # Player get game id
+    game_response = APP.app_data.server.send_start_game_request()
+    logging.info("Game ID: %s", game_response.client_id)
+    APP.app_data.game_id = game_response.game_id
+
+    if not APP.app_data.game_id:
+        sleep(15)
+        
+    # Player request game state
+    game_state_response = APP.app_data.server.get_game_state()
+    logging.info("Game State: %s", game_state_response)
+    APP.app_data.game_state = game_response
+
+    return redirect(url_for('game', game_id=game_state_response.game_id))
+
+
+@APP.route('/game/<game_id>', methods=['GET', 'POST'])
+def game(game_id):
     # Uncomment to test displaying character whereabouts
     # App.app_data.game_state.whereabouts = {
     #     game_const.PLUM : (game_const.STUDY, game_const.LIBRARY),
@@ -131,6 +144,7 @@ def start_game():
                             accusation=False,
                             move=False,
                             game_state=APP.app_data.game_state)
+
 
 @APP.route('/api/game_state', methods=['GET'])
 def api_game_state():
