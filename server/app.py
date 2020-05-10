@@ -29,6 +29,7 @@ class App(Flask):
     futures: List[Future] = []
     executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=5)
     lock: Lock = Lock()
+    lock.acquire
     paused: bool = True
     kill: bool = False
 
