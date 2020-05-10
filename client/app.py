@@ -42,6 +42,8 @@ class AppData(object):
     seen_cards: List[str] = []
     player_deck: List[str] = []
     character: str = ''
+    whereabouts: List[str] = []
+    current_turn: str = ''
 
 
 class App(Flask):
@@ -111,15 +113,17 @@ def join_game():
         
     # Player request game state
     game_state_response = APP.app_data.server.get_game_state()
-    logging.info("Game State: %s", game_state_response)
-    APP.app_data.game_state = game_response
+    logging.info("Game State: %s", game_state_response.game_id)
 
     return redirect(url_for('game', game_id=game_state_response.game_id))
 
 
 @APP.route('/game/<game_id>', methods=['GET', 'POST'])
 def game(game_id):
-    # Uncomment to test displaying character whereabouts
+    game_state_response = APP.app_data.server.get_game_state()
+    APP.app_data.whereabouts = game_state_response.whereabouts
+    APP.app_data.current_turn = game_state_response.current_turn
+
     # App.app_data.game_state.whereabouts = {
     #     game_const.PLUM : (game_const.STUDY, game_const.LIBRARY),
     #     game_const.WHITE : (game_const.STUDY, game_const.LIBRARY),
@@ -133,7 +137,6 @@ def game(game_id):
     #     game_const.GREEN, game_const.BILLIARD, game_const.CANDLESTICK
     # }
     
-    # Add logic here to determien true/false for suggestion/accusation
     return render_template('game.html',
                             game_const=game_const,
                             characters=list(game_const.CHARACTERS),
@@ -143,7 +146,10 @@ def game(game_id):
                             suggestion=True,
                             accusation=False,
                             move=False,
-                            game_state=APP.app_data.game_state)
+                            character=APP.app_data.character,
+                            game_state=APP.app_data.game_state,
+                            whereabouts=APP.app_data.whereabouts,
+                            turn=APP.app_data.current_turn)
 
 
 @APP.route('/api/player_move', methods=['GET'])
