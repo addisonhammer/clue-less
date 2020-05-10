@@ -14,7 +14,7 @@ JOIN_GAME_ROUTE = 'api/join_game'
 REQUEST_GAME_ROUTE = 'api/request_game'
 PLAYER_COUNT_REQUEST_ROUTE = 'api/player_count'
 PLAYER_COUNT_UPDATE_ROUTE = 'join'
-GAME_STATE_ROUTE = '/api/game_state'
+GAME_STATE_ROUTE = 'api/game_state'
 
 
 class Server(object):

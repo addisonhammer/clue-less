@@ -106,21 +106,19 @@ def join_game():
     # Player request game state
     game_state_response = APP.app_data.server.get_game_state()
     logging.info("Game State: %s", game_state_response)
-    
+
     if not game_state_response.game_id:
-        APP.app_data.ready=False
+        APP.app_data.ready=False        
     else: 
-        APP.app_data.ready=True
+        return redirect(url_for('game', game_id=game_state_response.game_id))
 
     # Add logic here to determine if game is ready
     return render_template('home.html',
                            character=APP.app_data.character,
                            ready=APP.app_data.ready)
 
-@APP.route('/game', methods=['POST'])
-def start_game():
-
-    # Add logic here to determien true/false for suggestion/accusation
+@APP.route('/game/<game_id>', methods=['GET', 'POST'])
+def game(game_id):
     return render_template('game.html',
                             characters=list(game_const.CHARACTERS),
                             weapons=list(game_const.WEAPONS),
