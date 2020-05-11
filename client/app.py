@@ -132,9 +132,13 @@ def game(game_id):
     APP.app_data.game_state = APP.app_data.server.get_game_state()
     APP.app_data.current_turn = APP.app_data.game_state.current_turn
     logging.info('debug action: %s', APP.app_data.next_action)
+    rooms=list(game_const.ROOMS)
 
     if APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.WAIT:
         APP.app_data.next_action = Actions.MOVE
+        while APP.app_data.move_request is None:
+            sleep(1)
+        rooms = APP.app_data.move_request.move_options
     elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.MOVE:
         APP.app_data.next_action = Actions.SUGGEST
     elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.SUGGEST:
@@ -157,7 +161,7 @@ def game(game_id):
                            game_const=game_const,
                            characters=list(game_const.CHARACTERS),
                            weapons=list(game_const.WEAPONS),
-                           rooms=list(game_const.ROOMS),
+                           rooms=rooms,
                            room_layout=list(game_const.ROOMS_LAYOUT),
                            suggestion=APP.app_data.suggestion,
                            character=APP.app_data.character,
@@ -221,7 +225,29 @@ def accuse():
             time.sleep(1)
 
     elif request.form['submit'] == "Skip":
-        pass
+        if APP.app_data.next_action == Actions.MOVE:
+            APP.app_data.move_response = messages.PlayerMoveResponse(
+                APP.app_data.game_id,
+                APP.app_data.client_id,
+                None
+            )
+        elif APP.app_data.next_action == Actions.SUGGEST:
+            APP.app_data.suggest_request = messages.PlayerSuggestionRequest(
+            APP.app_data.game_id,
+            APP.app_data.client_id,
+            None,
+            None,
+            None
+            )
+        elif APP.app_data.next_action == Actions.SUGGEST:
+            APP.app_data.suggest_request = messages.PlayerAccusationRequest(
+            APP.app_data.game_id,
+            APP.app_data.client_id,
+            None,
+            None,
+            None
+            )
+        
 
     return redirect(url_for('game', game_id=APP.app_data.game_id))
 
