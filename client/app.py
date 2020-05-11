@@ -10,7 +10,7 @@ from flask import Flask, request, render_template, jsonify, redirect, url_for
 
 from core.messages import PlayerMoveRequest, PlayerMoveResponse
 from core.server_boundary import Server
-from core.messages import GameStateRequest
+from core.messages import GameStateRequest, ClientGameStateRequest
 
 from core.game import GameEncoder
 from core import game_const
@@ -44,6 +44,9 @@ class AppData(object):
     character: str = ''
     whereabouts: List[str] = []
     current_turn: str = ''
+    suggestion: bool = True
+    accuse: bool = False
+    move: bool = False
 
 
 class App(Flask):
@@ -143,13 +146,72 @@ def game(game_id):
                             weapons=list(game_const.WEAPONS),
                             rooms=list(game_const.ROOMS),
                             room_layout=list(game_const.ROOMS_LAYOUT),
-                            suggestion=True,
-                            accusation=False,
-                            move=False,
+                            suggestion=APP.app_data.suggestion,
+                            accusation=APP.app_data.accuse,
+                            move=APP.app_data.move,
                             character=APP.app_data.character,
                             game_state=APP.app_data.game_state,
                             whereabouts=APP.app_data.whereabouts,
                             turn=APP.app_data.current_turn)
+
+
+@APP.route('/submit', methods=['POST'])
+def accuse():
+
+    # Player suggests character/weapon/room
+    suspect = request.form.get('character')
+    weapon = request.form.get('weapon')
+    room = request.form.get('room')
+
+    APP.app_data.suggest_request = messages.PlayerSuggestionRequest(
+        APP.app_data.game_id,
+        APP.app_data.client_id,
+        suspect,
+        weapon,
+        room
+    )
+
+    return redirect(url_for('game', game_id=APP.app_data.game_id))
+
+
+@APP.route('/api/game_state', methods=['GET'])
+def api_game_state():
+    logging.info('Received api_game_state Request: %s',
+                 request.args)
+    game_state = messages.GameStateRequest.from_dict(
+        request.args.to_dict(flat=False))
+    logging.info('Parsed Request: %s', game_state)
+    APP.app_data.game_state = game_state
+    APP.app_data.player_deck = game_state.player_cards
+    APP.app_data.game_id = game_state.game_id[0]
+    APP.next_action = Actions.WAIT
+    response = {'ack': True}
+    # logging.info('Sending Response: %s', response)
+    return jsonify(response)
+
+
+@APP.route('/api/suggest', methods=['GET'])
+def api_suggest():
+    logging.info('Received api_suggest Request: %s', request.args)
+    suggest_request = messages.PlayerSuggestionRequest.from_dict(
+        request.args.to_dict(flat=False))
+    logging.info('Parsed Request: %s', suggest_request)
+    APP.app_data.suggest_request = suggest_request
+    APP.next_action = Actions.SUGGEST
+    time.sleep(2)
+    weapons, suspects, rooms = APP.strategize_options(suggest_request.weapons,
+                                                      suggest_request.suspects,
+                                                      suggest_request.rooms)
+    logging.info('Weapons: %s, Suspects: %s, Rooms: %s',
+                 weapons, suspects, rooms)
+
+    response = messages.PlayerSuggestionResponse(game_id=APP.app_data.game_id,
+                                                 client_id=APP.app_data.client_id,
+                                                 room=APP.app_data.suggest_request.rooms,
+                                                 suspect=APP.app_data.suggest_request.suspects,
+                                                 weapon=APP.app_data.suggest_request.weapons)
+    logging.info('Sending Response: %s', response)
+    return jsonify(response.to_dict())
 
 
 @APP.route('/api/player_move', methods=['GET'])
@@ -166,32 +228,6 @@ def api_player_move():
                                            client_id=APP.app_data.client_id,
                                            move=move_selection)
 
-    logging.info('Sending Response: %s', response)
-    return jsonify(response.to_dict())
-
-
-@APP.route('/api/suggest', methods=['GET'])
-def api_suggest():
-    # logging.info('Received api_suggest Request: %s', request.args)
-    suggest_request = messages.PlayerSuggestionRequest.from_dict(
-        request.args.to_dict(flat=False))
-    logging.info('Parsed Request: %s', suggest_request)
-    APP.app_data.suggest_request = suggest_request
-    APP.next_action = Actions.SUGGEST
-    time.sleep(2)
-    weapons, suspects, rooms = APP.strategize_options(suggest_request.weapons,
-                                                      suggest_request.suspects,
-                                                      suggest_request.rooms)
-    logging.info('Weapons: %s, Suspects: %s, Rooms: %s',
-                 weapons, suspects, rooms)
-    room = random.choice(rooms)
-    weapon = random.choice(weapons)
-    suspect = random.choice(suspects)
-    response = messages.PlayerSuggestionResponse(game_id=APP.app_data.game_id,
-                                                 client_id=APP.app_data.client_id,
-                                                 room=room,
-                                                 suspect=suspect,
-                                                 weapon=weapon)
     logging.info('Sending Response: %s', response)
     return jsonify(response.to_dict())
 

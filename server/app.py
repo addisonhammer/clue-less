@@ -18,7 +18,7 @@ from core.messages import ClientGameStateRequest, GameStateRequest
 
 CLIENT_PORT = 5000
 
-MIN_PLAYERS = 3
+MIN_PLAYERS = 1
 MAX_PLAYERS = 6
 
 
@@ -30,7 +30,7 @@ class App(Flask):
     executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=5)
     lock: Lock = Lock()
     lock.acquire
-    paused: bool = True
+    paused: bool = False
     kill: bool = False
 
     def __init__(self, *args, **kwargs):
