@@ -4,6 +4,7 @@ import uuid
 
 import requests
 
+from core.game_const import format_hallway_name
 from core.game_pieces import Player, Card, CardType, Room, Board
 from core.messages import GameStateRequest
 from core.messages import PlayerMoveRequest, PlayerMoveResponse
@@ -46,9 +47,9 @@ class Client(object):
 
     def get_game_state(self, players: List[Player],
                         active_player: Player):
-        whereabouts = [
-            f'{player.name}@{player.room.name}' for player in players
-        ]
+        whereabouts = {}
+        for player in players:
+            whereabouts[player.name] = player.room.name
         player = [player for player in players if player.name ==
                   self.player_name][0]
         player_cards = [card.name for card in player.cards]

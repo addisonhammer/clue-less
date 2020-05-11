@@ -12,6 +12,7 @@ from core.client_boundary import Client
 from core import game_const
 from core.messages import Message
 from core.game_pieces import CardType, Card, RoomType, Room, Board, Player
+from core.game_const import format_hallway_name
 
 # Module-level helper functions
 
@@ -27,11 +28,6 @@ class GameEncoder(JSONEncoder):
         if isinstance(obj, (Client, Game)):
             return obj.__dict__
         return JSONEncoder.default(self, obj)
-
-
-def format_hallway_name(hallway: Tuple[str, str]) -> str:
-    return f'{hallway[0]} - {hallway[1]} Hallway'
-
 
 class Game(object):
     """Class representing the game instance."""

@@ -7,7 +7,7 @@
 {% block content %}
   <div class="room-container">
     {% for room in room_layout %}
-        {% if room|length == 2 %}
+        {% if 'Hallway' in room %}
           <div class="hall">
         {% elif room == "" %}
           <div class="empty">

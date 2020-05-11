@@ -1,4 +1,9 @@
 # Declare constants for Game
+from typing import Tuple
+
+def format_hallway_name(hallway: Tuple[str, str]) -> str:
+    return f'{hallway[0]} - {hallway[1]} Hallway'
+
 PLUM ='Prof. Plum'
 WHITE = 'Mrs. White'
 MUSTARD = 'Col. Mustard'
@@ -28,11 +33,11 @@ ROOMS = (STUDY, HALL, LOUNGE, LIBRARY, BILLIARD, DINING, BALLROOM, KITCHEN, CONS
 
 EMPTY = ''
 ROOMS_LAYOUT = (
-    STUDY,                   (STUDY, HALL),            HALL,                 (HALL, LOUNGE),      LOUNGE,
-    (STUDY, LIBRARY),        EMPTY,                    (HALL, BILLIARD),     EMPTY,               (LOUNGE, DINING),
-    LIBRARY,                 (LIBRARY, BILLIARD),      BILLIARD,             (DINING, BILLIARD),  DINING, 
-    (CONSERVATORY, LIBRARY), EMPTY,                    (BALLROOM, BILLIARD), EMPTY,               (DINING, KITCHEN),
-    CONSERVATORY,            (BALLROOM, CONSERVATORY), BALLROOM,             (KITCHEN, BALLROOM), KITCHEN)
+    STUDY,                   format_hallway_name((STUDY, HALL)),            HALL,                 format_hallway_name((HALL, LOUNGE)),      LOUNGE,
+    format_hallway_name((STUDY, LIBRARY)),        EMPTY,                    format_hallway_name((HALL, BILLIARD)),     EMPTY,               format_hallway_name((LOUNGE, DINING)),
+    LIBRARY,                 format_hallway_name((LIBRARY, BILLIARD)),      BILLIARD,             format_hallway_name((DINING, BILLIARD)),  DINING, 
+    format_hallway_name((CONSERVATORY, LIBRARY)), EMPTY,                    format_hallway_name((BALLROOM, BILLIARD)), EMPTY,               format_hallway_name((DINING, KITCHEN)),
+    CONSERVATORY,            format_hallway_name((BALLROOM, CONSERVATORY)), BALLROOM,             format_hallway_name((KITCHEN, BALLROOM)), KITCHEN)
 
 HALLWAYS = (
     (STUDY, HALL),

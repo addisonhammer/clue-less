@@ -4,7 +4,7 @@ import logging
 import os
 import random
 import time
-from typing import List
+from typing import List, Dict
 
 from flask import Flask, request, render_template, jsonify, redirect, url_for
 
@@ -48,7 +48,7 @@ class AppData(object):
     seen_cards: List[str] = []
     player_deck: List[str] = []
     character: str = ''
-    whereabouts: List[str] = []
+    whereabouts: Dict[str,str] = []
     current_turn: str = ''
     suggestion: bool = True
     continue_game: bool = False
@@ -129,9 +129,8 @@ def join_game():
 
 @APP.route('/game/<game_id>', methods=['GET', 'POST'])
 def game(game_id):
-    game_state_response = APP.app_data.server.get_game_state()
-    APP.app_data.whereabouts = game_state_response.whereabouts
-    APP.app_data.current_turn = game_state_response.current_turn
+    APP.app_data.game_state = APP.app_data.server.get_game_state()
+    APP.app_data.current_turn = APP.app_data.game_state.current_turn
     # App.app_data.game_state.whereabouts = {
     #     game_const.PLUM : (game_const.STUDY, game_const.LIBRARY),
     #     game_const.WHITE : (game_const.STUDY, game_const.LIBRARY),
@@ -154,7 +153,6 @@ def game(game_id):
                            suggestion=APP.app_data.suggestion,
                            character=APP.app_data.character,
                            game_state=APP.app_data.game_state,
-                           whereabouts=APP.app_data.whereabouts,
                            turn=APP.app_data.current_turn,
                            continue_game=APP.app_data.continue_game)
 
