@@ -20,6 +20,8 @@ from time import sleep
 SERVER_IP = os.environ.get('SERVER_IP')
 SERVER_PORT = os.environ.get('SERVER_PORT')
 
+DEBUG = False
+
 
 class Actions(Enum):
     WAIT = 0  # Client should display default game interface
@@ -31,11 +33,15 @@ class Actions(Enum):
 class AppData(object):
     server = Server(SERVER_IP, SERVER_PORT)
     next_action: Actions = Actions.WAIT
-    game_state: messages.GameStateRequest = GameStateRequest(None, None, None, None, None)
+    game_state: messages.GameStateRequest = GameStateRequest(
+        None, None, None, None, None)
     move_request: messages.PlayerMoveRequest = None
+    move_response: messages.PlayerMoveResponse = None
     suggest_request: messages.PlayerSuggestionRequest
+    suggest_response: messages.PlayerSuggestionResponse = None
     suggest_results: messages.PlayerSuggestionResult
     accuse_request: messages.PlayerAccusationRequest
+    accuse_response: messages.PlayerAccusationResponse = None
     accuse_results: messages.PlayerAccusationResult
     game_id: str = ''
     client_id: str = ''
@@ -90,8 +96,8 @@ def debug_app():
 
 @APP.route('/')
 def main():
-    return render_template('home.html', 
-                            characters=list(game_const.CHARACTERS))
+    return render_template('home.html',
+                           characters=list(game_const.CHARACTERS))
 
 
 @APP.route('/join_game', methods=['POST'])
@@ -100,8 +106,9 @@ def join_game():
     APP.app_data.character = request.form.get('character')
     logging.info('Selected character: %s', APP.app_data.character)
 
-    # Player get client id  
-    join_response = APP.app_data.server.send_join_request(APP.app_data.character)
+    # Player get client id
+    join_response = APP.app_data.server.send_join_request(
+        APP.app_data.character)
     logging.info("Client ID: %s", join_response.client_id)
     APP.app_data.client_id = join_response.client_id
 
@@ -112,7 +119,7 @@ def join_game():
 
     if not APP.app_data.game_id:
         sleep(15)
-        
+
     # Player request game state
     game_state_response = APP.app_data.server.get_game_state()
     logging.info("Game State: %s", game_state_response.game_id)
@@ -132,24 +139,24 @@ def game(game_id):
     #     game_const.SCARLET : (game_const.LOUNGE, game_const.DINING),
     #     game_const.PEACOCK : game_const.KITCHEN,
     #     game_const.GREEN : game_const.BILLIARD
-    # } 
+    # }
 
     # App.app_data.game_state.player_cards = {
     #     game_const.GREEN, game_const.BILLIARD, game_const.CANDLESTICK
     # }
-    
+
     return render_template('game.html',
-                            game_const=game_const,
-                            characters=list(game_const.CHARACTERS),
-                            weapons=list(game_const.WEAPONS),
-                            rooms=list(game_const.ROOMS),
-                            room_layout=list(game_const.ROOMS_LAYOUT),
-                            suggestion=APP.app_data.suggestion,
-                            character=APP.app_data.character,
-                            game_state=APP.app_data.game_state,
-                            whereabouts=APP.app_data.whereabouts,
-                            turn=APP.app_data.current_turn,
-                            continue_game=APP.app_data.continue_game)
+                           game_const=game_const,
+                           characters=list(game_const.CHARACTERS),
+                           weapons=list(game_const.WEAPONS),
+                           rooms=list(game_const.ROOMS),
+                           room_layout=list(game_const.ROOMS_LAYOUT),
+                           suggestion=APP.app_data.suggestion,
+                           character=APP.app_data.character,
+                           game_state=APP.app_data.game_state,
+                           whereabouts=APP.app_data.whereabouts,
+                           turn=APP.app_data.current_turn,
+                           continue_game=APP.app_data.continue_game)
 
 
 @APP.route('/submit', methods=['POST'])
@@ -172,7 +179,7 @@ def accuse():
         # Once player made a suggestion, continue_game becomes True to display their next move
         # They can either make an accusation or make a move
         APP.app_data.suggestion = False
-        APP.app_data.continue_game = True 
+        APP.app_data.continue_game = True
 
     elif request.form['submit'] == "Make an Accusation":
 
@@ -185,15 +192,14 @@ def accuse():
         )
 
         APP.app_data.continue_game = False
-        APP.app_data.suggestion = True 
+        APP.app_data.suggestion = True
 
     elif request.form['submit'] == "Make a Move":
 
         # TODO: Graeme to add move logic here
 
-        APP.app_data.continue_game = False 
-        APP.app_data.suggestion = True 
-
+        APP.app_data.continue_game = False
+        APP.app_data.suggestion = True
 
     return redirect(url_for('game', game_id=APP.app_data.game_id))
 
@@ -222,19 +228,28 @@ def api_suggest():
     logging.info('Parsed Request: %s', suggest_request)
     APP.app_data.suggest_request = suggest_request
     APP.next_action = Actions.SUGGEST
-    time.sleep(2)
-    weapons, suspects, rooms = APP.strategize_options(suggest_request.weapons,
-                                                      suggest_request.suspects,
-                                                      suggest_request.rooms)
-    logging.info('Weapons: %s, Suspects: %s, Rooms: %s',
-                 weapons, suspects, rooms)
 
-    response = messages.PlayerSuggestionResponse(game_id=APP.app_data.game_id,
-                                                 client_id=APP.app_data.client_id,
-                                                 room=APP.app_data.suggest_request.rooms,
-                                                 suspect=APP.app_data.suggest_request.suspects,
-                                                 weapon=APP.app_data.suggest_request.weapons)
-    logging.info('Sending Response: %s', response)
+    if DEBUG:
+        time.sleep(2)
+        weapons, suspects, rooms = APP.strategize_options(suggest_request.weapons,
+                                                          suggest_request.suspects,
+                                                          suggest_request.rooms)
+        logging.info('Weapons: %s, Suspects: %s, Rooms: %s',
+                     weapons, suspects, rooms)
+
+        response = messages.PlayerSuggestionResponse(game_id=APP.app_data.game_id,
+                                                     client_id=APP.app_data.client_id,
+                                                     room=APP.app_data.suggest_request.rooms,
+                                                     suspect=APP.app_data.suggest_request.suspects,
+                                                     weapon=APP.app_data.suggest_request.weapons)
+        logging.info('Sending Automated DEBUG Response: %s', response)
+        return jsonify(response.to_dict())
+
+    while not APP.app_data.suggest_response:
+        time.sleep(1)
+    response = APP.app_data.suggest_response
+    APP.app_data.suggest_response = None
+    logging.info('Sending Player Response: %s', response)
     return jsonify(response.to_dict())
 
 
@@ -246,13 +261,22 @@ def api_player_move():
     logging.info('Parsed Request: %s', move_request)
     # APP.move_request = move_request
     APP.next_action = Actions.MOVE
-    time.sleep(2)
-    move_selection = random.choice(move_request.move_options)
-    response = messages.PlayerMoveResponse(game_id=APP.app_data.game_id,
-                                           client_id=APP.app_data.client_id,
-                                           move=move_selection)
 
-    logging.info('Sending Response: %s', response)
+    if DEBUG:
+        time.sleep(1)
+        move_selection = random.choice(move_request.move_options)
+        response = messages.PlayerMoveResponse(game_id=APP.app_data.game_id,
+                                               client_id=APP.app_data.client_id,
+                                               move=move_selection)
+
+        logging.info('Sending Automated DEBUG Response: %s', response)
+        return jsonify(response.to_dict())
+
+    while not APP.app_data.move_response:
+        time.sleep(1)
+    response = APP.app_data.move_response
+    APP.app_data.move_response = None
+    logging.info('Sending Player Response: %s', response)
     return jsonify(response.to_dict())
 
 
@@ -281,19 +305,28 @@ def api_accuse():
     logging.info('Parsed Request: %s', accuse_request)
     APP.accuse_request = accuse_request
     APP.next_action = Actions.ACCUSE
-    time.sleep(2)
-    weapons, suspects, rooms = APP.strategize_options(accuse_request.weapons,
-                                                      accuse_request.suspects,
-                                                      accuse_request.rooms)
-    logging.info('Weapons: %s, Suspects: %s, Rooms: %s',
-                 weapons, suspects, rooms)
 
-    response = messages.PlayerAccusationResponse(game_id=APP.app_data.game_id,
-                                                 client_id=APP.app_data.client_id,
-                                                 room=APP.app_data.suggest_request.rooms,
-                                                 suspect=APP.app_data.suggest_request.suspects,
-                                                 weapon=APP.app_data.suggest_request.weapons)
-    logging.info('Sending Response: %s', response)
+    if DEBUG:
+        time.sleep(2)
+        weapons, suspects, rooms = APP.strategize_options(accuse_request.weapons,
+                                                          accuse_request.suspects,
+                                                          accuse_request.rooms)
+        logging.info('Weapons: %s, Suspects: %s, Rooms: %s',
+                     weapons, suspects, rooms)
+
+        response = messages.PlayerAccusationResponse(game_id=APP.app_data.game_id,
+                                                     client_id=APP.app_data.client_id,
+                                                     room=APP.app_data.suggest_request.rooms,
+                                                     suspect=APP.app_data.suggest_request.suspects,
+                                                     weapon=APP.app_data.suggest_request.weapons)
+        logging.info('Sending Automated DEBUG Response: %s', response)
+        return jsonify(response.to_dict())
+
+    while not APP.app_data.accuse_response:
+        time.sleep(1)
+    response = APP.app_data.accuse_response
+    APP.app_data.accuse_response = None
+    logging.info('Sending Player Response: %s', response)
     return jsonify(response.to_dict())
 
 
@@ -308,6 +341,7 @@ def api_accuse_result():
     response = {'ack': True}
     # logging.info('Sending Response: %s', response)
     return jsonify(response)
+
 
 @APP.template_filter('card_url')
 def card_url(card_text):
@@ -355,7 +389,6 @@ def card_url(card_text):
         return "https://i.imgur.com/Gbq9kuk.jpg?1"
     else:
         return ""
-
 
 
 if __name__ == '__main__':
