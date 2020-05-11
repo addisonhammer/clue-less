@@ -29,8 +29,8 @@
     display: flex;
     margin: auto auto;
     justify-content: center;
-    height: 75%;
-    width: 60%;
+    height: 30%;
+    width: 15%;
     border-radius: 5px;
     box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22);
 }

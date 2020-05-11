@@ -131,6 +131,15 @@ def join_game():
 def game(game_id):
     APP.app_data.game_state = APP.app_data.server.get_game_state()
     APP.app_data.current_turn = APP.app_data.game_state.current_turn
+    logging.info('debug action: %s', APP.app_data.next_action)
+
+    if APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.WAIT:
+        APP.app_data.next_action = Actions.MOVE
+    elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.MOVE:
+        APP.app_data.next_action = Actions.SUGGEST
+    elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.SUGGEST:
+        APP.app_data.next_action = Actions.ACCUSE
+
     # App.app_data.game_state.whereabouts = {
     #     game_const.PLUM : (game_const.STUDY, game_const.LIBRARY),
     #     game_const.WHITE : (game_const.STUDY, game_const.LIBRARY),
@@ -154,7 +163,9 @@ def game(game_id):
                            character=APP.app_data.character,
                            game_state=APP.app_data.game_state,
                            turn=APP.app_data.current_turn,
-                           continue_game=APP.app_data.continue_game)
+                           continue_game=APP.app_data.continue_game,
+                           action_options=Actions,
+                           next_action=APP.app_data.next_action)
 
 
 @APP.route('/submit', methods=['POST'])
@@ -192,12 +203,25 @@ def accuse():
         APP.app_data.continue_game = False
         APP.app_data.suggestion = True
 
+        while APP.app_data.move_request:
+            time.sleep(1)
+
     elif request.form['submit'] == "Make a Move":
 
-        # TODO: Graeme to add move logic here
+        APP.app_data.move_response = messages.PlayerMoveResponse(
+            APP.app_data.game_id,
+            APP.app_data.client_id,
+            room
+        )
 
         APP.app_data.continue_game = False
         APP.app_data.suggestion = True
+
+        while APP.app_data.move_request:
+            time.sleep(1)
+
+    elif request.form['submit'] == "Skip":
+        pass
 
     return redirect(url_for('game', game_id=APP.app_data.game_id))
 
@@ -258,6 +282,7 @@ def api_player_move():
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', move_request)
     # APP.move_request = move_request
+    APP.app_data.move_request = move_request
     APP.next_action = Actions.MOVE
 
     if DEBUG:
@@ -272,6 +297,9 @@ def api_player_move():
 
     while not APP.app_data.move_response:
         time.sleep(1)
+
+    APP.app_data.move_request = None
+
     response = APP.app_data.move_response
     APP.app_data.move_response = None
     logging.info('Sending Player Response: %s', response)
@@ -301,9 +329,9 @@ def api_accuse():
     accuse_request = messages.PlayerAccusationRequest.from_dict(
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', accuse_request)
-    APP.accuse_request = accuse_request
-    APP.next_action = Actions.ACCUSE
-
+    APP.app_data.accuse_request = accuse_request
+    APP.app_data.next_action = Actions.ACCUSE
+    
     if DEBUG:
         time.sleep(2)
         weapons, suspects, rooms = APP.strategize_options(accuse_request.weapons,

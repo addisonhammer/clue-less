@@ -18,7 +18,7 @@ from core.messages import ClientGameStateRequest, GameStateRequest
 
 CLIENT_PORT = 5000
 
-MIN_PLAYERS = 1
+MIN_PLAYERS = 3
 MAX_PLAYERS = 6
 
 
