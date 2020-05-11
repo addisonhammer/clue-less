@@ -14,6 +14,7 @@ from core.game import Game, GameEncoder
 from core.messages import JoinGameRequest, JoinGameResponse
 from core.messages import StartGameRequest, StartGameResponse
 from core.messages import PlayerCountRequest, PlayerCountResponse
+from core.messages import ClientGameStateRequest, GameStateRequest
 
 CLIENT_PORT = 5000
 
@@ -28,7 +29,8 @@ class App(Flask):
     futures: List[Future] = []
     executor: ThreadPoolExecutor = ThreadPoolExecutor(max_workers=5)
     lock: Lock = Lock()
-    paused: bool = False
+    lock.acquire
+    paused: bool = True
     kill: bool = False
 
     def __init__(self, *args, **kwargs):
@@ -194,7 +196,20 @@ def player_count():
                                    count=len(APP.waiting_clients))
     return jsonify(response.to_dict())
 
+@APP.route('/api/game_state', methods=['GET'])
+def game_state():
+    client_state_request = ClientGameStateRequest.from_dict(dict(request.args))
+    logging.info('Parsed request: %s', client_state_request)
+    client = APP.get_client(client_state_request.client_id)
+    logging.info('client: %s', client)
+    if not client.game_id:
+        return jsonify(GameStateRequest(None, None, None, None, None))
+    game_id = client.game_id
+    game = APP.get_game(game_id)
+    game_state = client.get_game_state(game.players, game.active_player)
+    return jsonify(game_state)
 
+    
 # Define all @APP.routes above this line.
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
