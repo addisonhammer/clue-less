@@ -45,8 +45,7 @@ class AppData(object):
     whereabouts: List[str] = []
     current_turn: str = ''
     suggestion: bool = True
-    accuse: bool = False
-    move: bool = False
+    continue_game: bool = False
 
 
 class App(Flask):
@@ -126,7 +125,6 @@ def game(game_id):
     game_state_response = APP.app_data.server.get_game_state()
     APP.app_data.whereabouts = game_state_response.whereabouts
     APP.app_data.current_turn = game_state_response.current_turn
-
     # App.app_data.game_state.whereabouts = {
     #     game_const.PLUM : (game_const.STUDY, game_const.LIBRARY),
     #     game_const.WHITE : (game_const.STUDY, game_const.LIBRARY),
@@ -147,12 +145,11 @@ def game(game_id):
                             rooms=list(game_const.ROOMS),
                             room_layout=list(game_const.ROOMS_LAYOUT),
                             suggestion=APP.app_data.suggestion,
-                            accusation=APP.app_data.accuse,
-                            move=APP.app_data.move,
                             character=APP.app_data.character,
                             game_state=APP.app_data.game_state,
                             whereabouts=APP.app_data.whereabouts,
-                            turn=APP.app_data.current_turn)
+                            turn=APP.app_data.current_turn,
+                            continue_game=APP.app_data.continue_game)
 
 
 @APP.route('/submit', methods=['POST'])
@@ -163,13 +160,40 @@ def accuse():
     weapon = request.form.get('weapon')
     room = request.form.get('room')
 
-    APP.app_data.suggest_request = messages.PlayerSuggestionRequest(
-        APP.app_data.game_id,
-        APP.app_data.client_id,
-        suspect,
-        weapon,
-        room
-    )
+    if request.form['submit'] == "Make a Suggestion":
+        APP.app_data.suggest_request = messages.PlayerSuggestionRequest(
+            APP.app_data.game_id,
+            APP.app_data.client_id,
+            suspect,
+            weapon,
+            room
+        )
+
+        # Once player made a suggestion, continue_game becomes True to display their next move
+        # They can either make an accusation or make a move
+        APP.app_data.suggestion = False
+        APP.app_data.continue_game = True 
+
+    elif request.form['submit'] == "Make an Accusation":
+
+        APP.app_data.suggest_request = messages.PlayerAccusationRequest(
+            APP.app_data.game_id,
+            APP.app_data.client_id,
+            suspect,
+            weapon,
+            room
+        )
+
+        APP.app_data.continue_game = False
+        APP.app_data.suggestion = True 
+
+    elif request.form['submit'] == "Make a Move":
+
+        # TODO: Graeme to add move logic here
+
+        APP.app_data.continue_game = False 
+        APP.app_data.suggestion = True 
+
 
     return redirect(url_for('game', game_id=APP.app_data.game_id))
 
@@ -220,7 +244,7 @@ def api_player_move():
     move_request = messages.PlayerMoveRequest.from_dict(
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', move_request)
-    APP.move_request = move_request
+    # APP.move_request = move_request
     APP.next_action = Actions.MOVE
     time.sleep(2)
     move_selection = random.choice(move_request.move_options)
@@ -237,7 +261,7 @@ def api_suggest_result():
     # logging.info('Received api_suggest_result Request: %s', request.args)
     suggest_results = messages.PlayerSuggestionResult.from_dict(
         request.args.to_dict(flat=False))
-    logging.info('Parsed Request: %s', suggest_results)
+    logging.info('Parsing suggest results: %s', suggest_results)
     APP.app_data.suggest_results = suggest_results
     logging.info('test')
     if suggest_results.disproved_card[0]:
@@ -263,24 +287,12 @@ def api_accuse():
                                                       accuse_request.rooms)
     logging.info('Weapons: %s, Suspects: %s, Rooms: %s',
                  weapons, suspects, rooms)
-    # Only select an accusation if we're pretty sure!
-    if (
-            len(rooms) +
-            len(weapons) +
-            len(suspects)) <= 4:
-        room = random.choice(rooms)
-        weapon = random.choice(weapons)
-        suspect = random.choice(suspects)
-    else:
-        room = ''
-        weapon = ''
-        suspect = ''
 
     response = messages.PlayerAccusationResponse(game_id=APP.app_data.game_id,
                                                  client_id=APP.app_data.client_id,
-                                                 room=room,
-                                                 weapon=weapon,
-                                                 suspect=suspect)
+                                                 room=APP.app_data.suggest_request.rooms,
+                                                 suspect=APP.app_data.suggest_request.suspects,
+                                                 weapon=APP.app_data.suggest_request.weapons)
     logging.info('Sending Response: %s', response)
     return jsonify(response.to_dict())
 

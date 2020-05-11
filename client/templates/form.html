@@ -11,14 +11,9 @@
     {% if character == turn %}
       It is your turn!
     {% endif %}
-
-    {% if suggestion_result %}
-      {{suggestion_result[0]['character']}} has shared {{suggestion_result[0]['card']}} with you.
-    {% endif %}
-  
-    {% if accusation_result %}
-      {{accusation_result}}
-    {% endif %}
+    <!-- TODO: Show suggestion results -->
+    <!-- TODO: Show accusation results -->
+    <!-- TODO: Show move results -->
   </div>
 
   <form name=game-form id=game-form class="game-form" method="POST" action="/submit">
@@ -41,19 +36,16 @@
       {% endfor %}
     </select>
     {% if suggestion is sameas true %}
-    <input type="submit" name="suggest" value="Make a Suggestion">
-    {% endif %}
-    {% if accusation is sameas true %}
-    <input type="submit" name="accuse" value="Make an Accusation">
+    <input type="submit" name="submit" value="Make a Suggestion">
     {% endif %}
 
     <div class="continue-game">
-      {% if suggestion_result %}
+      {% if continue_game is sameas true %}
         <input type="submit" name="submit" value="Make an Accusation">
         <input type="submit" name="submit" value="Make a Move">
       {% endif %}
     </div>
-  
+
   </form>
 </div>  
 
