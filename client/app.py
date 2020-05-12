@@ -135,7 +135,6 @@ def game(game_id):
     APP.app_data.game_state = APP.app_data.server.get_game_state()
     APP.app_data.current_turn = APP.app_data.game_state.current_turn
     logging.info('current_turn: %s', APP.app_data.current_turn)
-    logging.info('debug action: %s', APP.app_data.next_action)
     rooms=list(game_const.ROOMS)
 
     if APP.app_data.game_state.current_turn != APP.app_data.character:
@@ -149,36 +148,20 @@ def game(game_id):
         APP.app_data.suggested = False
     elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.MOVE and APP.app_data.moved:
         APP.app_data.next_action = Actions.SUGGEST
-        #rooms = current room
 
         rooms.clear()
         room = APP.app_data.game_state.whereabouts[APP.app_data.character]
         if "Hallway" not in room:
             rooms.append(room)
         else:
+            # Players shouldn't be allowed to move to make a suggestion from hallway
             rooms = []
-
     elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.SUGGEST and APP.app_data.suggested:
         APP.app_data.next_action = Actions.ACCUSE
         while APP.app_data.accuse_request is None:
             sleep(1)
-        
-
-    # App.app_data.game_state.whereabouts = {
-    #     game_const.PLUM : (game_const.STUDY, game_const.LIBRARY),
-    #     game_const.WHITE : (game_const.STUDY, game_const.LIBRARY),
-    #     game_const.MUSTARD : game_const.BILLIARD,
-    #     game_const.SCARLET : (game_const.LOUNGE, game_const.DINING),
-    #     game_const.PEACOCK : game_const.KITCHEN,
-    #     game_const.GREEN : game_const.BILLIARD
-    # }
-
-    # App.app_data.game_state.player_cards = {
-    #     game_const.GREEN, game_const.BILLIARD, game_const.CANDLESTICK
-    # }
 
     return render_template('game.html',
-                           game_const=game_const,
                            characters=list(game_const.CHARACTERS),
                            weapons=list(game_const.WEAPONS),
                            rooms=rooms,
@@ -189,7 +172,9 @@ def game(game_id):
                            turn=APP.app_data.current_turn,
                            continue_game=APP.app_data.continue_game,
                            action_options=Actions,
-                           next_action=APP.app_data.next_action)
+                           next_action=APP.app_data.next_action,
+                           accuse_results=APP.app_data.accuse_results,
+                           suggest_results=APP.app_data.suggest_results)
 
 
 @APP.route('/submit', methods=['POST'])
@@ -224,6 +209,7 @@ def accuse():
             suspect,
             weapon,
             room
+
         )
 
         logging.info("Accuse Response %s", APP.app_data.accuse_response)
@@ -372,7 +358,6 @@ def api_suggest_result():
         request.args.to_dict(flat=False))
     logging.info('Parsing suggest results: %s', suggest_results)
     APP.app_data.suggest_results = suggest_results
-    logging.info('test')
     if suggest_results.disproved_card[0]:
         APP.app_data.seen_cards.append(suggest_results.disproved_card[0])
     logging.info(APP.app_data.seen_cards)
@@ -424,7 +409,7 @@ def api_accuse_result():
     accuse_results = messages.PlayerAccusationResult.from_dict(
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', accuse_results)
-    APP.accuse_results = accuse_results
+    APP.app_data.accuse_results = accuse_results
     APP.next_action = Actions.WAIT
     response = {'ack': True}
     # logging.info('Sending Response: %s', response)

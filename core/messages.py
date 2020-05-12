@@ -46,6 +46,7 @@ class PlayerSuggestionResult(Message):
     room: str = ''
     disproved_by: str = ''
     disproved_card: str = ''
+    suggested_by: str = ''
 
 
 @attr.s(auto_attribs=True, slots=True)

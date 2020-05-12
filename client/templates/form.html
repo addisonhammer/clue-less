@@ -8,17 +8,16 @@
 <div class="form-container">
 
   <div class="alert">
-    {% if character == turn %}
-      It is your turn!
+    {% if accuse_results.correct %}
+      It was {{accuse_results.suspect[0]}} with the {{accuse_results.weapon[0]}} in the {{accuse_results.room[0]}}
+    {% elif character == turn %}
+      It is your turn!   
     {% else %}
-      Waiting for your turn...  
+      Waiting for your turn...   
     {% endif %}
-    <!-- TODO: Show suggestion results -->
-    <!-- TODO: Show accusation results -->
-    <!-- TODO: Show move results -->
   </div>
 
-  {% if character == turn %}
+  {% if character == turn and not accuse_results.correct %}
     <form name=game-form id=game-form class="game-form" method="POST" action="/submit">
       
       {% if next_action == action_options.SUGGEST or next_action == action_options.ACCUSE %}

@@ -100,11 +100,11 @@ class Game(object):
 
     def _broadcast_suggestion_results(self, suggestion: List[Card] = [],
                                       disproved_by: Optional[Player] = None,
-                                      disproved_card: Optional[Card] = None
-                                      ) -> None:
+                                      disproved_card: Optional[Card] = None,
+                                      suggested_by: Optional[str] = None) -> None:
         for client in self.clients:
             client.send_suggestion_result(suggestion,
-                                          disproved_by, disproved_card)
+                                          disproved_by, disproved_card, suggested_by)
 
     def _broadcast_accusation_results(self, accusation: List[Card],
                                       correct: bool, ) -> None:
@@ -164,12 +164,13 @@ class Game(object):
             player_to_ask = self.players[turn % len(self.players)]
             for card in suggestion:
                 if card in player_to_ask.cards:
+                    logging.info('DEBUG_SUG: player %s, card %s, from: %s', player_to_ask, card, self.active_client.player_name)
                     self._broadcast_suggestion_results(
-                        suggestion, player_to_ask, card)
+                        suggestion, player_to_ask, card, self.active_client.player_name)
                     return
 
         # If no one was able to disprove the suggestion, broadcast that
-        self._broadcast_suggestion_results(suggestion, None, None)
+        self._broadcast_suggestion_results(suggestion, None, None, None)
 
     def _player_accuse(self):
         valid_cards = [card for card in self.cards]
