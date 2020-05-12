@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 
 {% block css %}
-  <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/form.css') }}?version=1">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/form.css') }}?version=1">
 {% endblock %}
 
 {% block content %}
@@ -9,51 +9,51 @@
 
   <div class="alert">
     {% if accuse_results.correct %}
-      It was {{accuse_results.suspect[0]}} with the {{accuse_results.weapon[0]}} in the {{accuse_results.room[0]}}
+    It was {{accuse_results.suspect}} with the {{accuse_results.weapon}} in the {{accuse_results.room}}
     {% elif character == turn %}
-      It is your turn!   
+    It is your turn!
     {% else %}
-      Waiting for your turn...   
+    Waiting for your turn...
     {% endif %}
   </div>
 
   {% if character == turn and not accuse_results.correct %}
-    <form name=game-form id=game-form class="game-form" method="POST" action="/submit">
-      
-      {% if next_action == action_options.SUGGEST or next_action == action_options.ACCUSE %}
-        <select name="character" id="character" form_id=character-form>
-          <option disabled selected value> Select a character </option>
-          {% for character in characters %}
-              <option value="{{ character }}">{{ character }}</option>
-          {% endfor %}
-        </select>
+  <form name=game-form id=game-form class="game-form" method="POST" action="/submit">
 
-        <select name="weapon" id="weapon" form_id=weapon-form>
-          <option disabled selected value> Select a weapon </option>
-          {% for weapon in weapons %}
-              <option value="{{ weapon }}">{{ weapon }}</option>
-          {% endfor %}
-        </select>
-      {% endif %}
+    {% if next_action == action_options.SUGGEST or next_action == action_options.ACCUSE %}
+    <select name="character" id="character" form_id=character-form>
+      <option disabled selected value> Select a character </option>
+      {% for character in characters %}
+      <option value="{{ character }}">{{ character }}</option>
+      {% endfor %}
+    </select>
 
-      <select name="room" id="room" form_id=room-form>
-        <option disabled selected value> Select a room </option>
-        {% for room in rooms %}
-            <option value="{{ room }}">{{ room }}</option>
-        {% endfor %}
-      </select>
+    <select name="weapon" id="weapon" form_id=weapon-form>
+      <option disabled selected value> Select a weapon </option>
+      {% for weapon in weapons %}
+      <option value="{{ weapon }}">{{ weapon }}</option>
+      {% endfor %}
+    </select>
+    {% endif %}
 
-      {% if next_action == action_options.MOVE %}
-        <input type="submit" name="submit" value="Make a Move">
-      {% elif next_action == action_options.SUGGEST%}
-        <input type="submit" name="submit" value="Make a Suggestion">
-      {% elif next_action == action_options.ACCUSE %}
-        <input type="submit" name="submit" value="Make an Accusation">
-      {% endif %}
+    <select name="room" id="room" form_id=room-form>
+      <option disabled selected value> Select a room </option>
+      {% for room in rooms %}
+      <option value="{{ room }}">{{ room }}</option>
+      {% endfor %}
+    </select>
 
-      <input type="submit" name="submit" value="Skip">
+    {% if next_action == action_options.MOVE %}
+    <input type="submit" name="submit" value="Make a Move">
+    {% elif next_action == action_options.SUGGEST%}
+    <input type="submit" name="submit" value="Make a Suggestion">
+    {% elif next_action == action_options.ACCUSE %}
+    <input type="submit" name="submit" value="Make an Accusation">
+    {% endif %}
+
+    <input type="submit" name="submit" value="Skip">
     {% endif %}
   </form>
-</div>  
+</div>
 
 {% endblock %}

@@ -196,6 +196,7 @@ def player_count():
                                    count=len(APP.waiting_clients))
     return jsonify(response.to_dict())
 
+
 @APP.route('/api/game_state', methods=['GET'])
 def game_state():
     client_state_request = ClientGameStateRequest.from_dict(dict(request.args))
@@ -209,7 +210,7 @@ def game_state():
     game_state = client.get_game_state(game.players, game.active_player)
     return jsonify(game_state)
 
-    
+
 # Define all @APP.routes above this line.
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)

@@ -21,6 +21,8 @@ SERVER_IP = os.environ.get('SERVER_IP')
 SERVER_PORT = os.environ.get('SERVER_PORT')
 
 DEBUG = False
+EMPTY_ACCUSATION_RESULT = messages.PlayerAccusationResult('', '', False,
+                                                          '', '', '')
 
 
 class Actions(Enum):
@@ -42,13 +44,13 @@ class AppData(object):
     suggest_results: messages.PlayerSuggestionResult = None
     accuse_request: messages.PlayerAccusationRequest = None
     accuse_response: messages.PlayerAccusationResponse = None
-    accuse_results: messages.PlayerAccusationResult = None
+    accuse_results: messages.PlayerAccusationResult = EMPTY_ACCUSATION_RESULT
     game_id: str = ''
     client_id: str = ''
     seen_cards: List[str] = []
     player_deck: List[str] = []
     character: str = ''
-    whereabouts: Dict[str,str] = []
+    whereabouts: Dict[str, str] = []
     current_turn: str = ''
     suggestion: bool = True
     continue_game: bool = False
@@ -135,7 +137,7 @@ def game(game_id):
     APP.app_data.game_state = APP.app_data.server.get_game_state()
     APP.app_data.current_turn = APP.app_data.game_state.current_turn
     logging.info('current_turn: %s', APP.app_data.current_turn)
-    rooms=list(game_const.ROOMS)
+    rooms = list(game_const.ROOMS)
 
     if APP.app_data.game_state.current_turn != APP.app_data.character:
         APP.app_data.next_action = Actions.WAIT
@@ -248,25 +250,24 @@ def accuse():
             APP.app_data.moved = True
         elif APP.app_data.next_action == Actions.SUGGEST:
             APP.app_data.suggest_response = messages.PlayerSuggestionResponse(
-            APP.app_data.game_id,
-            APP.app_data.client_id,
-            None,
-            None,
-            None
+                APP.app_data.game_id,
+                APP.app_data.client_id,
+                None,
+                None,
+                None
             )
             APP.app_data.suggested = True
         elif APP.app_data.next_action == Actions.ACCUSE:
             APP.app_data.accuse_response = messages.PlayerAccusationResponse(
-            APP.app_data.game_id,
-            APP.app_data.client_id,
-            None,
-            None,
-            None
+                APP.app_data.game_id,
+                APP.app_data.client_id,
+                None,
+                None,
+                None
             )
             APP.app_data.accused = True
 
     time.sleep(1)
-        
 
     return redirect(url_for('game', game_id=APP.app_data.game_id))
 
@@ -375,7 +376,7 @@ def api_accuse():
     logging.info('Parsed Request: %s', accuse_request)
     APP.app_data.accuse_request = accuse_request
     APP.app_data.next_action = Actions.ACCUSE
-    
+
     if DEBUG:
         time.sleep(2)
         weapons, suspects, rooms = APP.strategize_options(accuse_request.weapons,
@@ -409,7 +410,7 @@ def api_accuse_result():
     accuse_results = messages.PlayerAccusationResult.from_dict(
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', accuse_results)
-    APP.app_data.accuse_results = accuse_results
+    APP.app_data.accuse_results = _clean_accuse_results(accuse_results)
     APP.next_action = Actions.WAIT
     response = {'ack': True}
     # logging.info('Sending Response: %s', response)
@@ -462,6 +463,14 @@ def card_url(card_text):
         return "https://i.imgur.com/Gbq9kuk.jpg?1"
     else:
         return ""
+
+
+def _clean_accuse_results(accuse_results):
+    accuse_results.correct = accuse_results.correct[0] == 'True'
+    accuse_results.weapon = accuse_results.weapon[0]
+    accuse_results.suspect = accuse_results.suspect[0]
+    accuse_results.room = accuse_results.room[0]
+    return accuse_results
 
 
 if __name__ == '__main__':

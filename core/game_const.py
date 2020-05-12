@@ -1,10 +1,12 @@
 # Declare constants for Game
 from typing import Tuple
 
+
 def format_hallway_name(hallway: Tuple[str, str]) -> str:
     return f'{hallway[0]} - {hallway[1]} Hallway'
 
-PLUM ='Prof. Plum'
+
+PLUM = 'Prof. Plum'
 WHITE = 'Mrs. White'
 MUSTARD = 'Col. Mustard'
 SCARLET = 'Miss Scarlet'
@@ -29,14 +31,19 @@ DINING = 'Dining Room'
 BALLROOM = 'Ballroom'
 KITCHEN = 'Kitchen'
 CONSERVATORY = 'Conservatory'
-ROOMS = (STUDY, HALL, LOUNGE, LIBRARY, BILLIARD, DINING, BALLROOM, KITCHEN, CONSERVATORY)
+ROOMS = (STUDY, HALL, LOUNGE, LIBRARY, BILLIARD,
+         DINING, BALLROOM, KITCHEN, CONSERVATORY)
 
 EMPTY = ''
 ROOMS_LAYOUT = (
-    STUDY,                   format_hallway_name((STUDY, HALL)),            HALL,                 format_hallway_name((HALL, LOUNGE)),      LOUNGE,
-    format_hallway_name((STUDY, LIBRARY)),        EMPTY,                    format_hallway_name((HALL, BILLIARD)),     EMPTY,               format_hallway_name((LOUNGE, DINING)),
-    LIBRARY,                 format_hallway_name((LIBRARY, BILLIARD)),      BILLIARD,             format_hallway_name((DINING, BILLIARD)),  DINING, 
-    format_hallway_name((CONSERVATORY, LIBRARY)), EMPTY,                    format_hallway_name((BALLROOM, BILLIARD)), EMPTY,               format_hallway_name((DINING, KITCHEN)),
+    STUDY,                   format_hallway_name(
+        (STUDY, HALL)),            HALL,                 format_hallway_name((HALL, LOUNGE)),      LOUNGE,
+    format_hallway_name((STUDY, LIBRARY)),        EMPTY,                    format_hallway_name(
+        (HALL, BILLIARD)),     EMPTY,               format_hallway_name((LOUNGE, DINING)),
+    LIBRARY,                 format_hallway_name(
+        (LIBRARY, BILLIARD)),      BILLIARD,             format_hallway_name((DINING, BILLIARD)),  DINING,
+    format_hallway_name((CONSERVATORY, LIBRARY)), EMPTY,                    format_hallway_name(
+        (BALLROOM, BILLIARD)), EMPTY,               format_hallway_name((DINING, KITCHEN)),
     CONSERVATORY,            format_hallway_name((BALLROOM, CONSERVATORY)), BALLROOM,             format_hallway_name((KITCHEN, BALLROOM)), KITCHEN)
 
 HALLWAYS = (
