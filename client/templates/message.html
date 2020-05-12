@@ -7,7 +7,23 @@
 {% block content %}
   <div class="message-container">
     <h4>Game state</h4>
-    
-    Current turn: {{turn}}
-</div>
+    Current turn: {{turn}} <br><br>
+
+    {% if suggest_results is not none %}
+    {% if character == suggest_results.disproved_by[0] or character == suggest_results.suggested_by[0] %}
+      The suggestion that {{suggest_results.suspect[0]}}  <br>
+      with the {{suggest_results.weapon[0]}}  <br>
+      in the {{suggest_results.room[0]}}  <br>
+      was disproved by {{suggest_results.disproved_by[0]}}  <br>
+      with the card {{suggest_results.disproved_card[0]}}.  <br>
+    {% else %}
+      The suggestion that {{suggest_results.suspect[0]}} <br>
+      with the {{suggest_results.weapon[0]}}  <br>
+      in the {{suggest_results.room[0]}}  <br>
+      was disproved by {{suggest_results.disproved_by[0]}}.  <br>
+    {% endif %}
+
+    {% endif %}
+
+  </div>
 {% endblock %}

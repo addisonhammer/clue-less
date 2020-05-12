@@ -100,7 +100,8 @@ class Client(object):
 
     def send_suggestion_result(self, suggestion: List[Card],
                                disproved_by: Optional[Player],
-                               disproved_card: Optional[Card]):
+                               disproved_card: Optional[Card],
+                               suggested_by: Optional[str]):
         logging.info('Sending Suggestion Results to %s', self.player_name)
         # logging.info('Suspects: %s, Weapons: %s, Rooms: %s',
         #              suspect_cards, weapon_cards, room_cards)
@@ -121,7 +122,11 @@ class Client(object):
         request = PlayerSuggestionResult(game_id=self.game_id,
                                          client_id=self.client_id,
                                          disproved_by=disproved_by.name,
-                                         disproved_card=disproved_card.name)
+                                         disproved_card=disproved_card.name,
+                                         suggested_by=suggested_by,
+                                         suspect=suspect_cards[0],
+                                         weapon=weapon_cards[0],
+                                         room=room_cards[0])
         response = self._post_request(route=SUGGESTION_RESULT_ROUTE,
                                       request=request)
         return response[ACK]

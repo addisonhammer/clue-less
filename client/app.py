@@ -37,12 +37,12 @@ class AppData(object):
         None, None, None, None, None)
     move_request: messages.PlayerMoveRequest = None
     move_response: messages.PlayerMoveResponse = None
-    suggest_request: messages.PlayerSuggestionRequest
+    suggest_request: messages.PlayerSuggestionRequest = None
     suggest_response: messages.PlayerSuggestionResponse = None
-    suggest_results: messages.PlayerSuggestionResult
-    accuse_request: messages.PlayerAccusationRequest
+    suggest_results: messages.PlayerSuggestionResult = None
+    accuse_request: messages.PlayerAccusationRequest = None
     accuse_response: messages.PlayerAccusationResponse = None
-    accuse_results: messages.PlayerAccusationResult
+    accuse_results: messages.PlayerAccusationResult = None
     game_id: str = ''
     client_id: str = ''
     seen_cards: List[str] = []
@@ -52,6 +52,9 @@ class AppData(object):
     current_turn: str = ''
     suggestion: bool = True
     continue_game: bool = False
+    moved: bool = False
+    suggested: bool = False
+    accused: bool = False
 
 
 class App(Flask):
@@ -131,30 +134,47 @@ def join_game():
 def game(game_id):
     APP.app_data.game_state = APP.app_data.server.get_game_state()
     APP.app_data.current_turn = APP.app_data.game_state.current_turn
-    # App.app_data.game_state.whereabouts = {
-    #     game_const.PLUM : (game_const.STUDY, game_const.LIBRARY),
-    #     game_const.WHITE : (game_const.STUDY, game_const.LIBRARY),
-    #     game_const.MUSTARD : game_const.BILLIARD,
-    #     game_const.SCARLET : (game_const.LOUNGE, game_const.DINING),
-    #     game_const.PEACOCK : game_const.KITCHEN,
-    #     game_const.GREEN : game_const.BILLIARD
-    # }
+    logging.info('current_turn: %s', APP.app_data.current_turn)
+    rooms=list(game_const.ROOMS)
 
-    # App.app_data.game_state.player_cards = {
-    #     game_const.GREEN, game_const.BILLIARD, game_const.CANDLESTICK
-    # }
+    if APP.app_data.game_state.current_turn != APP.app_data.character:
+        APP.app_data.next_action = Actions.WAIT
+    elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.WAIT:
+        APP.app_data.next_action = Actions.MOVE
+        while APP.app_data.move_request is None:
+            sleep(1)
+        rooms = APP.app_data.move_request.move_options
+        APP.app_data.moved = False
+        APP.app_data.suggested = False
+    elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.MOVE and APP.app_data.moved:
+        APP.app_data.next_action = Actions.SUGGEST
+
+        rooms.clear()
+        room = APP.app_data.game_state.whereabouts[APP.app_data.character]
+        if "Hallway" not in room:
+            rooms.append(room)
+        else:
+            # Players shouldn't be allowed to move to make a suggestion from hallway
+            rooms = []
+    elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.SUGGEST and APP.app_data.suggested:
+        APP.app_data.next_action = Actions.ACCUSE
+        while APP.app_data.accuse_request is None:
+            sleep(1)
 
     return render_template('game.html',
-                           game_const=game_const,
                            characters=list(game_const.CHARACTERS),
                            weapons=list(game_const.WEAPONS),
-                           rooms=list(game_const.ROOMS),
+                           rooms=rooms,
                            room_layout=list(game_const.ROOMS_LAYOUT),
                            suggestion=APP.app_data.suggestion,
                            character=APP.app_data.character,
                            game_state=APP.app_data.game_state,
                            turn=APP.app_data.current_turn,
-                           continue_game=APP.app_data.continue_game)
+                           continue_game=APP.app_data.continue_game,
+                           action_options=Actions,
+                           next_action=APP.app_data.next_action,
+                           accuse_results=APP.app_data.accuse_results,
+                           suggest_results=APP.app_data.suggest_results)
 
 
 @APP.route('/submit', methods=['POST'])
@@ -166,13 +186,15 @@ def accuse():
     room = request.form.get('room')
 
     if request.form['submit'] == "Make a Suggestion":
-        APP.app_data.suggest_request = messages.PlayerSuggestionRequest(
+        APP.app_data.suggest_response = messages.PlayerSuggestionResponse(
             APP.app_data.game_id,
             APP.app_data.client_id,
             suspect,
             weapon,
             room
         )
+
+        APP.app_data.suggested = True
 
         # Once player made a suggestion, continue_game becomes True to display their next move
         # They can either make an accusation or make a move
@@ -181,23 +203,70 @@ def accuse():
 
     elif request.form['submit'] == "Make an Accusation":
 
-        APP.app_data.suggest_request = messages.PlayerAccusationRequest(
+        APP.app_data.accuse_response = messages.PlayerAccusationResponse(
             APP.app_data.game_id,
             APP.app_data.client_id,
             suspect,
             weapon,
+            room
+
+        )
+
+        logging.info("Accuse Response %s", APP.app_data.accuse_response)
+
+        APP.app_data.continue_game = False
+        APP.app_data.suggestion = True
+
+        while APP.app_data.move_request:
+            time.sleep(1)
+
+        APP.app_data.accused = True
+
+    elif request.form['submit'] == "Make a Move":
+
+        APP.app_data.move_response = messages.PlayerMoveResponse(
+            APP.app_data.game_id,
+            APP.app_data.client_id,
             room
         )
 
         APP.app_data.continue_game = False
         APP.app_data.suggestion = True
 
-    elif request.form['submit'] == "Make a Move":
+        while APP.app_data.move_request:
+            time.sleep(1)
 
-        # TODO: Graeme to add move logic here
+        APP.app_data.moved = True
 
-        APP.app_data.continue_game = False
-        APP.app_data.suggestion = True
+    elif request.form['submit'] == "Skip":
+        if APP.app_data.next_action == Actions.MOVE:
+            APP.app_data.move_response = messages.PlayerMoveResponse(
+                APP.app_data.game_id,
+                APP.app_data.client_id,
+                None
+            )
+            APP.app_data.moved = True
+        elif APP.app_data.next_action == Actions.SUGGEST:
+            APP.app_data.suggest_response = messages.PlayerSuggestionResponse(
+            APP.app_data.game_id,
+            APP.app_data.client_id,
+            None,
+            None,
+            None
+            )
+            APP.app_data.suggested = True
+        elif APP.app_data.next_action == Actions.ACCUSE:
+            APP.app_data.accuse_response = messages.PlayerAccusationResponse(
+            APP.app_data.game_id,
+            APP.app_data.client_id,
+            None,
+            None,
+            None
+            )
+            APP.app_data.accused = True
+
+    time.sleep(1)
+        
 
     return redirect(url_for('game', game_id=APP.app_data.game_id))
 
@@ -258,6 +327,7 @@ def api_player_move():
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', move_request)
     # APP.move_request = move_request
+    APP.app_data.move_request = move_request
     APP.next_action = Actions.MOVE
 
     if DEBUG:
@@ -272,6 +342,9 @@ def api_player_move():
 
     while not APP.app_data.move_response:
         time.sleep(1)
+
+    APP.app_data.move_request = None
+
     response = APP.app_data.move_response
     APP.app_data.move_response = None
     logging.info('Sending Player Response: %s', response)
@@ -285,7 +358,6 @@ def api_suggest_result():
         request.args.to_dict(flat=False))
     logging.info('Parsing suggest results: %s', suggest_results)
     APP.app_data.suggest_results = suggest_results
-    logging.info('test')
     if suggest_results.disproved_card[0]:
         APP.app_data.seen_cards.append(suggest_results.disproved_card[0])
     logging.info(APP.app_data.seen_cards)
@@ -301,9 +373,9 @@ def api_accuse():
     accuse_request = messages.PlayerAccusationRequest.from_dict(
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', accuse_request)
-    APP.accuse_request = accuse_request
-    APP.next_action = Actions.ACCUSE
-
+    APP.app_data.accuse_request = accuse_request
+    APP.app_data.next_action = Actions.ACCUSE
+    
     if DEBUG:
         time.sleep(2)
         weapons, suspects, rooms = APP.strategize_options(accuse_request.weapons,
@@ -322,6 +394,9 @@ def api_accuse():
 
     while not APP.app_data.accuse_response:
         time.sleep(1)
+
+    APP.app_data.accuse_request = None
+
     response = APP.app_data.accuse_response
     APP.app_data.accuse_response = None
     logging.info('Sending Player Response: %s', response)
@@ -334,7 +409,7 @@ def api_accuse_result():
     accuse_results = messages.PlayerAccusationResult.from_dict(
         request.args.to_dict(flat=False))
     logging.info('Parsed Request: %s', accuse_results)
-    APP.accuse_results = accuse_results
+    APP.app_data.accuse_results = accuse_results
     APP.next_action = Actions.WAIT
     response = {'ack': True}
     # logging.info('Sending Response: %s', response)
