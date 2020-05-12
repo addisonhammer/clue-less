@@ -214,7 +214,11 @@ class Game(object):
         self.cards = weapons + characters + rooms
 
         logging.info('Dealing out the Murder Deck...')
-        self.murder_deck = [weapons.pop(), characters.pop(), rooms.pop()]
+        weapon = weapons.pop()
+        character = characters.pop()
+        room = rooms.pop()
+        self.murder_deck = [weapon, character, room]
+        logging.info('Weapon: %s, Character %s, Room %s', weapon, character, room)
 
         # Put the remaining cards in a deck, shuffle, and deal to players
         logging.info('Dealing the cards to Players...')

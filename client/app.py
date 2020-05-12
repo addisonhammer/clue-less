@@ -37,12 +37,12 @@ class AppData(object):
         None, None, None, None, None)
     move_request: messages.PlayerMoveRequest = None
     move_response: messages.PlayerMoveResponse = None
-    suggest_request: messages.PlayerSuggestionRequest
+    suggest_request: messages.PlayerSuggestionRequest = None
     suggest_response: messages.PlayerSuggestionResponse = None
-    suggest_results: messages.PlayerSuggestionResult
-    accuse_request: messages.PlayerAccusationRequest
+    suggest_results: messages.PlayerSuggestionResult = None
+    accuse_request: messages.PlayerAccusationRequest = None
     accuse_response: messages.PlayerAccusationResponse = None
-    accuse_results: messages.PlayerAccusationResult
+    accuse_results: messages.PlayerAccusationResult = None
     game_id: str = ''
     client_id: str = ''
     seen_cards: List[str] = []
@@ -52,6 +52,9 @@ class AppData(object):
     current_turn: str = ''
     suggestion: bool = True
     continue_game: bool = False
+    moved: bool = False
+    suggested: bool = False
+    accused: bool = False
 
 
 class App(Flask):
@@ -131,18 +134,35 @@ def join_game():
 def game(game_id):
     APP.app_data.game_state = APP.app_data.server.get_game_state()
     APP.app_data.current_turn = APP.app_data.game_state.current_turn
+    logging.info('current_turn: %s', APP.app_data.current_turn)
     logging.info('debug action: %s', APP.app_data.next_action)
     rooms=list(game_const.ROOMS)
 
-    if APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.WAIT:
+    if APP.app_data.game_state.current_turn != APP.app_data.character:
+        APP.app_data.next_action = Actions.WAIT
+    elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.WAIT:
         APP.app_data.next_action = Actions.MOVE
         while APP.app_data.move_request is None:
             sleep(1)
         rooms = APP.app_data.move_request.move_options
-    elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.MOVE:
+        APP.app_data.moved = False
+        APP.app_data.suggested = False
+    elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.MOVE and APP.app_data.moved:
         APP.app_data.next_action = Actions.SUGGEST
-    elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.SUGGEST:
+        #rooms = current room
+
+        rooms.clear()
+        room = APP.app_data.game_state.whereabouts[APP.app_data.character]
+        if "Hallway" not in room:
+            rooms.append(room)
+        else:
+            rooms = []
+
+    elif APP.app_data.game_state.current_turn == APP.app_data.character and APP.app_data.next_action == Actions.SUGGEST and APP.app_data.suggested:
         APP.app_data.next_action = Actions.ACCUSE
+        while APP.app_data.accuse_request is None:
+            sleep(1)
+        
 
     # App.app_data.game_state.whereabouts = {
     #     game_const.PLUM : (game_const.STUDY, game_const.LIBRARY),
@@ -181,13 +201,15 @@ def accuse():
     room = request.form.get('room')
 
     if request.form['submit'] == "Make a Suggestion":
-        APP.app_data.suggest_request = messages.PlayerSuggestionRequest(
+        APP.app_data.suggest_response = messages.PlayerSuggestionResponse(
             APP.app_data.game_id,
             APP.app_data.client_id,
             suspect,
             weapon,
             room
         )
+
+        APP.app_data.suggested = True
 
         # Once player made a suggestion, continue_game becomes True to display their next move
         # They can either make an accusation or make a move
@@ -196,7 +218,7 @@ def accuse():
 
     elif request.form['submit'] == "Make an Accusation":
 
-        APP.app_data.suggest_request = messages.PlayerAccusationRequest(
+        APP.app_data.accuse_response = messages.PlayerAccusationResponse(
             APP.app_data.game_id,
             APP.app_data.client_id,
             suspect,
@@ -204,11 +226,15 @@ def accuse():
             room
         )
 
+        logging.info("Accuse Response %s", APP.app_data.accuse_response)
+
         APP.app_data.continue_game = False
         APP.app_data.suggestion = True
 
         while APP.app_data.move_request:
             time.sleep(1)
+
+        APP.app_data.accused = True
 
     elif request.form['submit'] == "Make a Move":
 
@@ -224,6 +250,8 @@ def accuse():
         while APP.app_data.move_request:
             time.sleep(1)
 
+        APP.app_data.moved = True
+
     elif request.form['submit'] == "Skip":
         if APP.app_data.next_action == Actions.MOVE:
             APP.app_data.move_response = messages.PlayerMoveResponse(
@@ -231,22 +259,27 @@ def accuse():
                 APP.app_data.client_id,
                 None
             )
+            APP.app_data.moved = True
         elif APP.app_data.next_action == Actions.SUGGEST:
-            APP.app_data.suggest_request = messages.PlayerSuggestionRequest(
+            APP.app_data.suggest_response = messages.PlayerSuggestionResponse(
             APP.app_data.game_id,
             APP.app_data.client_id,
             None,
             None,
             None
             )
-        elif APP.app_data.next_action == Actions.SUGGEST:
-            APP.app_data.suggest_request = messages.PlayerAccusationRequest(
+            APP.app_data.suggested = True
+        elif APP.app_data.next_action == Actions.ACCUSE:
+            APP.app_data.accuse_response = messages.PlayerAccusationResponse(
             APP.app_data.game_id,
             APP.app_data.client_id,
             None,
             None,
             None
             )
+            APP.app_data.accused = True
+
+    time.sleep(1)
         
 
     return redirect(url_for('game', game_id=APP.app_data.game_id))
@@ -376,6 +409,9 @@ def api_accuse():
 
     while not APP.app_data.accuse_response:
         time.sleep(1)
+
+    APP.app_data.accuse_request = None
+
     response = APP.app_data.accuse_response
     APP.app_data.accuse_response = None
     logging.info('Sending Player Response: %s', response)

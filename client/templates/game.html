@@ -5,7 +5,12 @@
 {% endblock %}
 
 {% block content %}
-  <header><b>Who done it?</b></header>
+  <header>
+    {% if character != turn %}
+      <meta http-equiv="refresh" content="5">
+    {% endif %}
+    <b>Who done it?</b>
+  </header>
   <h2>{{character}}</h2>
   <div class="game-container">
     {% include 'message.html' %}
@@ -14,3 +19,4 @@
     {% include 'cards.html' %}
   </div>
 {% endblock %}
+
